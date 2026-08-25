@@ -137,14 +137,6 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
         </div>
       </aside>
 
-      <style>{`
-        @media (min-width: 1025px) {
-          .sidebar { position: sticky !important; top: 0; transform: translateX(0) !important; }
-        }
-        @media (max-width: 1024px) {
-          .mobile-close-btn { display: block !important; }
-        }
-      `}</style>
     </>
   );
 };

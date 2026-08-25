@@ -256,19 +256,6 @@ const Header = ({ toggleSidebar }) => {
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 768px) {
-          .header-search {
-            display: none !important;
-          }
-          .profile-info {
-            display: none !important;
-          }
-          .mobile-menu-btn {
-            display: block !important;
-          }
-        }
-      `}</style>
     </header>
   );
 };

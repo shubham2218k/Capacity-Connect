@@ -260,3 +260,38 @@ textarea {
 .search-bar svg {
   color: var(--text-light);
 }
+
+/* Responsive Layout Rules */
+@media (min-width: 1024px) {
+  .sidebar {
+    position: sticky !important;
+    top: 0;
+    transform: translateX(0) !important;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .sidebar-overlay {
+    display: none !important;
+  }
+  .header-search {
+    display: flex !important;
+  }
+  .profile-info {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .mobile-close-btn {
+    display: block !important;
+  }
+  .mobile-menu-btn {
+    display: block !important;
+  }
+  .header-search {
+    display: none !important;
+  }
+  .profile-info {
+    display: none !important;
+  }
+}

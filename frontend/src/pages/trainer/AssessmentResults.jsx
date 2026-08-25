@@ -92,54 +92,56 @@ const AssessmentResults = () => {
           </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left', backgroundColor: '#f8fafc' }}>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Trainee</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Score</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Percentage</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Status</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Submitted</th>
-              <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)', textAlign: 'right' }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map(result => (
-              <tr key={result.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <div style={{ fontWeight: 600 }}>{result.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>{result.department}</div>
-                </td>
-                <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
-                  {result.correct} / {result.total}
-                </td>
-                <td style={{ padding: '1rem 1.5rem', fontWeight: 600, color: result.passed ? 'var(--success)' : 'var(--danger)' }}>
-                  {result.score}%
-                </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <span className={`badge ${result.passed ? 'badge-success' : 'badge-warning'}`}>
-                    {result.passed ? 'Passed' : 'Failed'}
-                  </span>
-                </td>
-                <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
-                  {result.submittedAt}
-                </td>
-                <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                  <button className="btn btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
-                    View Details
-                  </button>
-                </td>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left', backgroundColor: '#f8fafc' }}>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Trainee</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Score</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Percentage</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Status</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)' }}>Submitted</th>
+                <th style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--text-light)', textAlign: 'right' }}>Action</th>
               </tr>
-            ))}
-            {results.length === 0 && (
-              <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-light)' }}>
-                  No submissions yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {results.map(result => (
+                <tr key={result.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <div style={{ fontWeight: 600 }}>{result.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>{result.department}</div>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>
+                    {result.correct} / {result.total}
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', fontWeight: 600, color: result.passed ? 'var(--success)' : 'var(--danger)' }}>
+                    {result.score}%
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <span className={`badge ${result.passed ? 'badge-success' : 'badge-warning'}`}>
+                      {result.passed ? 'Passed' : 'Failed'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--text-light)' }}>
+                    {result.submittedAt}
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                    <button className="btn btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {results.length === 0 && (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-light)' }}>
+                    No submissions yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -3,23 +3,22 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, CheckCircle, Clock, BookOpen, Users, PlayCircle, 
   FileText, Plus, MoreVertical, Edit2, Trash2, GripVertical,
-  Upload, File, Video, ChevronUp, ChevronDown, PenTool, X
+  Upload, File, Video, ChevronUp, ChevronDown, PenTool, X, Eye, EyeOff, FolderPlus
 } from 'lucide-react';
-import { mockTrainerCourses, mockAssessments } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 
 const CourseManagement = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Curriculum State
-  const [modules, setModules] = useState([
-    { id: 1, title: 'Module 1: Introduction', lessons: [
-      { id: 101, title: 'Introduction Lecture', type: 'video', duration: '18 min', size: '' },
-      { id: 102, title: 'Course Overview Notes', type: 'pdf', duration: '', size: '2.4 MB' }
-    ]},
-  ]);
+  const [modules, setModules] = useState([]);
   
   // Modals
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -27,57 +26,51 @@ const CourseManagement = () => {
   const [uploadData, setUploadData] = useState({ title: '', type: 'video', file: null });
 
   useEffect(() => {
-    // Load from local storage or mock data
-    const localCourses = JSON.parse(localStorage.getItem('trainer_mock_courses'));
-    let foundCourse = null;
-    
-    if (localCourses) {
-      foundCourse = localCourses.find(c => c.id === id);
-    }
-    if (!foundCourse) {
-      foundCourse = mockTrainerCourses.find(c => c.id === id);
-    }
-    
-    if (foundCourse) {
-      setCourse(foundCourse);
-    }
+    fetchCourseData();
   }, [id]);
+
+  const fetchCourseData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/courses/${id}`);
+      setCourse(response.data);
+      setModules(response.data.modules || []);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tabs = ['Overview', 'Curriculum', 'Resources', 'Assessments', 'Trainees', 'Feedback'];
 
-  const handlePublish = () => {
-    if(course) {
-      const updatedCourse = { ...course, status: 'Published' };
-      setCourse(updatedCourse);
-      
-      // Save locally
-      const localCourses = JSON.parse(localStorage.getItem('trainer_mock_courses')) || mockTrainerCourses;
-      const updatedCourses = localCourses.map(c => c.id === id ? updatedCourse : c);
-      localStorage.setItem('trainer_mock_courses', JSON.stringify(updatedCourses));
-
-      // Trigger mock notification for trainees
-      const localNotifs = JSON.parse(localStorage.getItem('cc_mock_notifications') || '[]');
-      localNotifs.unshift({
-        id: `n_${Date.now()}`,
-        type: 'course_published',
-        title: 'New Course Published',
-        message: `${course.title} has been updated and is now live.`,
-        date: 'Just now',
-        read: false
-      });
-      localStorage.setItem('cc_mock_notifications', JSON.stringify(localNotifs));
-      window.dispatchEvent(new Event('new_notification'));
+  const handlePublish = async () => {
+    try {
+      const response = await api.patch(`/courses/${id}`, { status: 'published' });
+      setCourse(response.data);
+    } catch (err) {
+      alert('Failed to publish course');
     }
   };
 
   // --- Curriculum Builders Actions ---
-  const addModule = () => {
-    const newId = Date.now();
-    setModules([...modules, { id: newId, title: `Module ${modules.length + 1}: New Module`, lessons: [] }]);
+  const addModule = async () => {
+    try {
+      const response = await api.post(`/courses/${id}/modules`, { title: `Module ${modules.length + 1}: New Module` });
+      setModules([...modules, response.data]);
+    } catch (err) {
+      alert('Error adding module');
+    }
   };
 
-  const removeModule = (modId) => {
-    setModules(modules.filter(m => m.id !== modId));
+  const removeModule = async (modId) => {
+    try {
+      await api.delete(`/courses/${id}/modules/${modId}`);
+      setModules(modules.filter(m => m._id !== modId));
+    } catch (err) {
+      alert('Error removing module');
+    }
   };
 
   const moveModule = (index, direction) => {
@@ -96,58 +89,38 @@ const CourseManagement = () => {
     setShowUploadModal(true);
   };
 
-  const handleUploadSubmit = (e) => {
+  const handleUploadSubmit = async (e) => {
     e.preventDefault();
-    if (!uploadData.title) return;
-    
-    const newLesson = {
-      id: Date.now(),
-      title: uploadData.title,
-      type: uploadData.type,
-      duration: uploadData.type === 'video' ? '15 min' : '',
-      size: uploadData.type !== 'video' ? '3.2 MB' : ''
-    };
-
-    setModules(modules.map(mod => {
-      if (mod.id === currentModuleId) {
-        return { ...mod, lessons: [...mod.lessons, newLesson] };
-      }
-      return mod;
-    }));
-
-    // Trigger mock notification for trainees
-    const localNotifs = JSON.parse(localStorage.getItem('cc_mock_notifications') || '[]');
-    localNotifs.unshift({
-      id: `n_${Date.now()}`,
-      type: 'resource_added',
-      title: 'New Learning Material',
-      message: `A new material "${uploadData.title}" was added to ${course?.title}.`,
-      date: 'Just now',
-      read: false
-    });
-    localStorage.setItem('cc_mock_notifications', JSON.stringify(localNotifs));
-    window.dispatchEvent(new Event('new_notification'));
-
-    setShowUploadModal(false);
+    try {
+      const response = await api.post(`/courses/${id}/modules/${currentModuleId}/lessons`, uploadData);
+      setModules(modules.map(mod => mod._id === currentModuleId ? { ...mod, lessons: [...mod.lessons, response.data] } : mod));
+      setShowUploadModal(false);
+    } catch (err) {
+      alert('Error uploading lesson');
+    }
   };
 
-  const removeLesson = (modId, lessonId) => {
-    setModules(modules.map(mod => {
-      if (mod.id === modId) {
-        return { ...mod, lessons: mod.lessons.filter(l => l.id !== lessonId) };
-      }
-      return mod;
-    }));
+  const removeLesson = async (modId, lessonId) => {
+    try {
+      await api.delete(`/courses/${id}/modules/${modId}/lessons/${lessonId}`);
+      setModules(modules.map(mod => {
+        if (mod._id === modId) {
+          return { ...mod, lessons: mod.lessons.filter(l => l._id !== lessonId) };
+        }
+        return mod;
+      }));
+    } catch (err) {
+      alert('Error removing lesson');
+    }
   };
 
-  if (!course) {
+  if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading course details...</div>;
   }
 
-  // Related Assessments
-  const courseAssessments = mockAssessments.filter(a => a.courseId === course.id);
-  const localAssessments = JSON.parse(localStorage.getItem('trainer_mock_assessments')) || [];
-  const allAssessments = [...localAssessments, ...courseAssessments].filter(a => a.courseId === course.id);
+  if (error) {
+    return <div style={{ padding: '2rem', textAlign: 'center', color: 'red' }}>Error: {error}</div>;
+  }
 
   return (
     <div className="container" style={{ padding: '1rem', maxWidth: '1100px' }}>
@@ -161,7 +134,7 @@ const CourseManagement = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
               <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', margin: 0 }}>{course.title}</h1>
-              <span className={`badge ${course.status === 'Published' ? 'badge-success' : 'badge-warning'}`}>
+              <span className={`badge ${course.status === 'published' ? 'badge-success' : 'badge-warning'}`}>
                 {course.status}
               </span>
             </div>
@@ -169,7 +142,7 @@ const CourseManagement = () => {
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button className="btn btn-secondary"><Edit2 size={16} /> Edit Details</button>
-            {course.status === 'Draft' && (
+            {course.status === 'draft' && (
               <button onClick={handlePublish} className="btn btn-primary"><CheckCircle size={16} /> Publish Course</button>
             )}
           </div>

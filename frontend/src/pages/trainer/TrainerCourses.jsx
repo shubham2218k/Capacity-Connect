@@ -4,33 +4,49 @@ import {
   Plus, Search, Filter, MoreVertical, Edit, Copy, Archive, Trash2, 
   BookOpen, Users, FileText, CheckCircle 
 } from 'lucide-react';
-import { mockTrainerCourses } from '../../data/mockData';
+import { api } from '../../services/api';
 
 const TrainerCourses = () => {
   const [courses, setCourses] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Try to load from localStorage first (for courses created in session)
-    const localCourses = JSON.parse(localStorage.getItem('trainer_mock_courses'));
-    if (localCourses && localCourses.length > 0) {
-      setCourses(localCourses);
-    } else {
-      setCourses(mockTrainerCourses);
-    }
+    fetchCourses();
   }, []);
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/courses/my');
+      setCourses(response.data || []);
+      setError(null);
+    } catch (err) {
+      setError(err.message || 'Unable to load your courses.');
+      setCourses([]); // Safe initialization
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tabs = ['All', 'Published', 'Draft', 'Archived'];
 
-  const filteredCourses = courses.filter(course => {
-    const matchesTab = activeTab === 'All' || 
-                      (activeTab === 'Published' && course.status === 'Published') ||
-                      (activeTab === 'Draft' && course.status === 'Draft') ||
-                      (activeTab === 'Archived' && course.status === 'Archived');
+  const filteredCourses = (courses || []).filter(course => {
+    // Backend returns status as lowercase (e.g. 'published'), map tab safely
+    const normalizedStatus = (course.status || '').toLowerCase();
     
-    const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          course.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTab = activeTab === 'All' || 
+                      (activeTab === 'Published' && normalizedStatus === 'published') ||
+                      (activeTab === 'Draft' && normalizedStatus === 'draft') ||
+                      (activeTab === 'Archived' && normalizedStatus === 'archived');
+    
+    const title = course.title || '';
+    const category = course.category || '';
+    
+    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          category.toLowerCase().includes(searchQuery.toLowerCase());
     
     return matchesTab && matchesSearch;
   });
@@ -76,23 +92,34 @@ const TrainerCourses = () => {
       </div>
 
       {/* Course Grid */}
-      {filteredCourses.length > 0 ? (
+      {loading ? (
+        <div style={{ padding: '4rem', textAlign: 'center' }}>
+          <div className="spinner" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', border: '3px solid var(--border-color)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <p className="text-light">Loading courses...</p>
+        </div>
+      ) : error ? (
+        <div className="card" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--danger)', marginBottom: '0.5rem' }}>Error</h3>
+          <p className="text-muted" style={{ marginBottom: '1.5rem' }}>{error}</p>
+          <button onClick={fetchCourses} className="btn btn-primary">Try Again</button>
+        </div>
+      ) : filteredCourses.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {filteredCourses.map(course => (
-            <div key={course.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div key={course._id || course.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               
               {/* Thumbnail */}
               <div style={{ position: 'relative', height: '160px', backgroundColor: 'var(--bg-color-alt)' }}>
                 {course.thumbnail ? (
-                  <img src={course.thumbnail} alt={course.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={course.thumbnail} alt={course.title || 'Course'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-light)' }}>
                     <BookOpen size={48} opacity={0.2} />
                   </div>
                 )}
                 <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '0.5rem' }}>
-                  <span className={`badge ${course.status === 'Published' ? 'badge-success' : course.status === 'Draft' ? 'badge-warning' : 'badge-neutral'}`}>
-                    {course.status}
+                  <span className={`badge ${(course.status || '').toLowerCase() === 'published' ? 'badge-success' : (course.status || '').toLowerCase() === 'draft' ? 'badge-warning' : 'badge-neutral'}`} style={{ textTransform: 'capitalize' }}>
+                    {course.status || 'Draft'}
                   </span>
                 </div>
               </div>
@@ -100,35 +127,35 @@ const TrainerCourses = () => {
               {/* Content */}
               <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>
-                  {course.category}
+                  {course.category || 'Uncategorized'}
                 </span>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', lineHeight: 1.4 }}>
-                  {course.title}
+                  {course.title || 'Untitled Course'}
                 </h3>
                 
                 {/* Stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <BookOpen size={16} /> {course.modules || 0} Modules
+                    <BookOpen size={16} /> {course.modules?.length || 0} Modules
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <FileText size={16} /> {course.resources || 0} Resources
+                    <FileText size={16} /> {course.resources?.length || course.resources || 0} Resources
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     <Users size={16} /> {course.enrolledTrainees || 0} Trainees
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <CheckCircle size={16} /> {course.assessments || 0} Quizzes
+                    <CheckCircle size={16} /> {course.assessments?.length || course.assessments || 0} Quizzes
                   </div>
                 </div>
 
                 {/* Footer Actions */}
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                    Updated {course.lastUpdated}
+                    {course.updatedAt ? `Updated ${new Date(course.updatedAt).toLocaleDateString()}` : 'Recently updated'}
                   </span>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <Link to={`/trainer/courses/${course.id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
+                    <Link to={`/trainer/courses/${course._id || course.id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
                       Manage
                     </Link>
                     <div style={{ position: 'relative' }} className="menu-container">
@@ -149,13 +176,13 @@ const TrainerCourses = () => {
           <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '1.5rem', borderRadius: '50%', marginBottom: '1.5rem' }}>
             <BookOpen size={48} className="text-light" />
           </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>No Courses Found</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>No courses created yet.</h3>
           <p className="text-muted" style={{ marginBottom: '1.5rem' }}>
-            {searchQuery ? "No courses match your search criteria." : "You haven't created any courses yet."}
+            {searchQuery ? "No courses match your search criteria." : "Create your first course to start building a training program."}
           </p>
           {!searchQuery && (
             <Link to="/trainer/courses/create" className="btn btn-primary">
-              <Plus size={18} /> Create Your First Course
+              <Plus size={18} /> Create New Course
             </Link>
           )}
         </div>

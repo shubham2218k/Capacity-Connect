@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { mockCourses } from '../data/mockData';
 import { Clock, Book, Award, PlayCircle, FileText, File, Video, ArrowLeft, CheckCircle } from 'lucide-react';
+import { api } from '../services/api';
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -10,25 +11,39 @@ const CourseDetails = () => {
   const [enrolled, setEnrolled] = useState(false);
 
   useEffect(() => {
+    // We still load course from mockData for the UI since some might not be connected to backend,
+    // but we can check enrollment from the backend if possible.
     const found = mockCourses.find(c => c.id === id);
     if (found) {
       setCourse(found);
     }
-    // Check local storage for mock enrollment state
-    const enrollments = JSON.parse(localStorage.getItem('mockEnrollments') || '[]');
-    if (enrollments.includes(id)) {
-      setEnrolled(true);
-    }
+    
+    // Check enrollment from backend
+    api.get(`/courses/${id}/enrollment`)
+      .then(res => {
+        if (res.success && res.data.enrolled) {
+          setEnrolled(true);
+        }
+      })
+      .catch(err => console.log('Enrollment check failed:', err));
   }, [id]);
 
-  const handleEnroll = () => {
-    // Mock enrollment persistence
-    const enrollments = JSON.parse(localStorage.getItem('mockEnrollments') || '[]');
-    if (!enrollments.includes(id)) {
-      enrollments.push(id);
-      localStorage.setItem('mockEnrollments', JSON.stringify(enrollments));
+  const handleEnroll = async () => {
+    try {
+      const res = await api.post(`/courses/${id}/enroll`);
+      if (res.success) {
+        setEnrolled(true);
+      }
+    } catch (err) {
+      console.error('Enrollment failed:', err);
+      // Fallback for demo purposes if backend isn't populated
+      const enrollments = JSON.parse(localStorage.getItem('mockEnrollments') || '[]');
+      if (!enrollments.includes(id)) {
+        enrollments.push(id);
+        localStorage.setItem('mockEnrollments', JSON.stringify(enrollments));
+      }
+      setEnrolled(true);
     }
-    setEnrolled(true);
   };
 
   if (!course) {

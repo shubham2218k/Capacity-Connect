@@ -28,7 +28,7 @@ const Register = () => {
     });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
     
@@ -44,10 +44,12 @@ const Register = () => {
     }
 
     const { confirmPassword, ...userData } = formData;
-    const result = register(userData);
+    const result = await register(userData);
     
     if (result.success) {
       navigate('/trainee/dashboard');
+    } else {
+      setError(result.message || 'Registration failed');
     }
   };
 

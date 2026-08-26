@@ -9,7 +9,7 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields');
@@ -17,7 +17,7 @@ const Login = () => {
     }
     
     // Use the auth context login which handles mock validation
-    const result = login(email, password);
+    const result = await login(email, password);
     
     if (result.success) {
       if (result.role === 'Admin') {
@@ -28,7 +28,7 @@ const Login = () => {
         navigate('/trainee/dashboard');
       }
     } else {
-      setError(result.error);
+      setError(result.message || 'Login failed'); // Use result.message because AuthContext uses message, not error
     }
   };
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { mockTrainerCourses } from '../../data/mockData';
+import { api } from '../../services/api';
 
 const CreateCourse = () => {
   const navigate = useNavigate();
@@ -74,34 +75,30 @@ const CreateCourse = () => {
   const handleSubmit = () => {
     setIsSubmitting(true);
     
-    // Create new course object
-    const newCourse = {
-      id: `c_${Date.now()}`,
+    const payload = {
       title: formData.title,
       category: formData.category,
       description: formData.shortDescription || 'A new capacity building course.',
       detailedDescription: formData.detailedDescription,
       difficulty: formData.difficulty,
       duration: formData.duration || 'Not specified',
-      status: 'Draft',
-      modules: 0,
-      resources: 0,
-      enrolledTrainees: 0,
-      assessments: 0,
-      lastUpdated: new Date().toLocaleDateString('en-GB'),
       objectives: objectives.filter(o => o.trim() !== ''),
       skills: skills
     };
 
-    // Save to localStorage
-    setTimeout(() => {
-      const existing = JSON.parse(localStorage.getItem('trainer_mock_courses')) || mockTrainerCourses;
-      const updated = [newCourse, ...existing];
-      localStorage.setItem('trainer_mock_courses', JSON.stringify(updated));
-      
-      // Navigate to course management
-      navigate(`/trainer/courses/${newCourse.id}`);
-    }, 800);
+    api.post('/courses', payload)
+      .then(response => {
+        if (response.success) {
+          navigate('/trainer/courses');
+        } else {
+          console.error("Course creation failed", response);
+          setIsSubmitting(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        setIsSubmitting(false);
+      });
   };
 
   return (

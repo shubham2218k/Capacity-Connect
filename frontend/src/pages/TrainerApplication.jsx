@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { api } from '../services/api';
 
 const TrainerApplication = () => {
   const navigate = useNavigate();
@@ -9,6 +10,8 @@ const TrainerApplication = () => {
     fullName: '',
     email: '',
     phone: '',
+    password: '',
+    confirmPassword: '',
     organization: '',
     department: '',
     designation: '',
@@ -21,6 +24,8 @@ const TrainerApplication = () => {
 
   const [skills, setSkills] = useState([]);
   const [currentSkill, setCurrentSkill] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableSkills = ['GIS', 'Remote Sensing', 'Climate Science', 'Data Analytics', 'Management', 'Communication', 'Earthquake Eng.', 'Meteorology'];
 
@@ -38,12 +43,40 @@ const TrainerApplication = () => {
     setSkills(skills.filter(s => s !== skillToRemove));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
-    // In a real application, we would make an API call here.
-    // For the prototype, we just show the success state.
-    setIsSubmitted(true);
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        organization: formData.organization,
+        department: formData.department,
+        designation: formData.designation,
+        qualification: formData.highestQualification,
+        expertise: skills,
+        experience: formData.experienceYears
+      };
+      const response = await api.post('/auth/trainer-apply', payload);
+      if (response.success) {
+        setIsSubmitted(true);
+      } else {
+        setError(response.message || 'Application failed');
+      }
+    } catch (err) {
+      setError('An error occurred during application');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -80,6 +113,12 @@ const TrainerApplication = () => {
           </div>
         </div>
 
+        {error && (
+          <div style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '0.75rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           {/* Personal Information */}
           <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
@@ -98,6 +137,14 @@ const TrainerApplication = () => {
               <div className="input-group">
                 <label>Phone Number *</label>
                 <input type="text" name="phone" value={formData.phone} onChange={handleChange} required placeholder="+91 XXXXX XXXXX" />
+              </div>
+              <div className="input-group">
+                <label>Password *</label>
+                <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Password" />
+              </div>
+              <div className="input-group">
+                <label>Confirm Password *</label>
+                <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Confirm Password" />
               </div>
             </div>
           </div>

@@ -69,17 +69,6 @@ const Header = ({ toggleSidebar }) => {
         >
           <Menu size={24} />
         </button>
-        
-        {/* Search */}
-        {user?.role !== 'Trainer' && (
-          <div style={{ position: 'relative', width: '320px' }} className="header-search search-bar">
-            <Search size={18} style={{ color: 'var(--text-light)' }} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-            />
-          </div>
-        )}
       </div>
 
       {/* Right Side Icons & Profile */}

@@ -12,23 +12,66 @@ const MCQExperience = () => {
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showConfirm, setShowConfirm] = useState(false);
   const [result, setResult] = useState(null);
 
   useEffect(() => {
     const foundAssessment = mockAssessments.find(a => a.id === id);
-    if (!foundAssessment || foundAssessment.status === 'Completed' && !JSON.parse(localStorage.getItem('mockCompletedAssessments') || '{}')[id]) {
-      // Basic safeguard. If it's real completed, allow review? For prototype, if not in mockMCQData, return.
-      if (!mockMCQData[id]) {
-        navigate('/trainee/assessments');
-        return;
-      }
-    }
-    setAssessment(foundAssessment);
+    setAssessment(foundAssessment || null);
     setQuestions(mockMCQData[id] || []);
-  }, [id, navigate]);
+    
+    // Check if there is a stored result for review
+    const completedMock = JSON.parse(localStorage.getItem('mockCompletedAssessments') || '{}');
+    if (completedMock[id]) {
+      setResult(completedMock[id]);
+      setIsSubmitted(true);
+    }
+    
+    setLoading(false);
+  }, [id]);
 
-  if (!assessment || questions.length === 0) return <div style={{ padding: '2rem' }}>Loading assessment...</div>;
+  if (loading) {
+    return (
+      <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center', color: 'var(--text-light)' }}>
+        Loading assessment...
+      </div>
+    );
+  }
+
+  if (!assessment) {
+    return (
+      <div className="container" style={{ maxWidth: '600px', padding: '4rem 1rem', textAlign: 'center' }}>
+        <div className="card" style={{ padding: '3rem 2rem' }}>
+          <AlertCircle size={48} style={{ color: 'var(--danger)', margin: '0 auto 1rem' }} />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Assessment Not Found</h2>
+          <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
+            The requested assessment could not be found in your organization workspace.
+          </p>
+          <button onClick={() => navigate('/trainee/assessments')} className="btn btn-primary">
+            Back to Assessments
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="container" style={{ maxWidth: '600px', padding: '4rem 1rem', textAlign: 'center' }}>
+        <div className="card" style={{ padding: '3rem 2rem' }}>
+          <AlertCircle size={48} style={{ color: 'var(--warning)', margin: '0 auto 1rem' }} />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>No Questions Available</h2>
+          <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>
+            No questions have been added to this assessment yet.
+          </p>
+          <button onClick={() => navigate('/trainee/assessments')} className="btn btn-primary">
+            Back to Assessments
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const currentQuestion = questions[currentQIndex];
   const isLastQuestion = currentQIndex === questions.length - 1;

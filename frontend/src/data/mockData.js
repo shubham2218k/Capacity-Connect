@@ -170,6 +170,45 @@ export const mockMCQData = {
       correctAnswer: 2,
       explanation: 'Line charts are the standard choice for displaying time series data.'
     }
+  ],
+  a2: [
+    {
+      id: 'q2_1',
+      question: 'What does GIS stand for?',
+      options: ['Geographic Information System', 'Global Imaging Satellite', 'Geospatial Index Service', 'General Information Software'],
+      correctAnswer: 0,
+      explanation: 'GIS stands for Geographic Information System.'
+    },
+    {
+      id: 'q2_2',
+      question: 'Which data model represents geographic features using points, lines, and polygons?',
+      options: ['Raster Model', 'Vector Model', 'Grid Model', 'Matrix Model'],
+      correctAnswer: 1,
+      explanation: 'The vector model represents discrete real-world features using geometry.'
+    },
+    {
+      id: 'q2_3',
+      question: 'What is QGIS?',
+      options: ['A proprietary database', 'An open-source desktop GIS software', 'A satellite operator', 'A programming language'],
+      correctAnswer: 1,
+      explanation: 'QGIS is a popular free and open-source Geographic Information System desktop application.'
+    }
+  ],
+  a3: [
+    {
+      id: 'q3_1',
+      question: 'Which of the following is essential for clear workplace email communication?',
+      options: ['Using ALL CAPS for urgency', 'Including a clear subject line and concise message', 'Forwarding chain emails', 'Omitting greetings'],
+      correctAnswer: 1,
+      explanation: 'A concise message with a descriptive subject line ensures clear and professional email communication.'
+    },
+    {
+      id: 'q3_2',
+      question: 'What is active listening during professional meetings?',
+      options: ['Multitasking on mobile', 'Fully attending to the speaker, understanding, and responding thoughtfully', 'Interrupting frequently', 'Ignoring non-verbal cues'],
+      correctAnswer: 1,
+      explanation: 'Active listening involves full engagement, focus, and constructive response.'
+    }
   ]
 };
 

@@ -129,7 +129,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
             onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-color-alt)'}
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <Settings size={18} /> System Settings
+            <Settings size={18} /> Organization Settings
           </Link>
           <button
             onClick={handleLogout}

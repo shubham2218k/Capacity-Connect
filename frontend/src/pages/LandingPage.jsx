@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { 
   Building2, 
   Users, 
@@ -23,23 +23,17 @@ import {
   Globe2, 
   Target,
   Sparkles,
-  Search,
   BellRing
 } from 'lucide-react';
 
 const LandingPage = () => {
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [getStartedDropdown, setGetStartedDropdown] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -61,7 +55,7 @@ const LandingPage = () => {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.95)' : 'var(--white)',
+        backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.96)' : 'var(--white)',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid var(--border-color)',
         transition: 'all 0.2s ease',
@@ -74,7 +68,7 @@ const LandingPage = () => {
           height: '72px'
         }}>
           
-          {/* LEFT: Branding */}
+          {/* BRAND LOGO */}
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
               width: '40px',
@@ -100,7 +94,7 @@ const LandingPage = () => {
             </div>
           </Link>
 
-          {/* CENTER: Desktop Navigation */}
+          {/* DESKTOP NAV LINKS */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: '2rem' }} className="desktop-nav">
             <button 
               onClick={() => scrollToSection('overview')}
@@ -111,6 +105,14 @@ const LandingPage = () => {
               Overview
             </button>
             <button 
+              onClick={() => scrollToSection('roles')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.95rem', cursor: 'pointer' }}
+              onMouseOver={(e) => e.currentTarget.style.color = 'var(--secondary)'}
+              onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+            >
+              Portals
+            </button>
+            <button 
               onClick={() => scrollToSection('how-it-works')}
               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.95rem', cursor: 'pointer' }}
               onMouseOver={(e) => e.currentTarget.style.color = 'var(--secondary)'}
@@ -119,12 +121,12 @@ const LandingPage = () => {
               How It Works
             </button>
             <button 
-              onClick={() => scrollToSection('platform')}
+              onClick={() => scrollToSection('capabilities')}
               style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.95rem', cursor: 'pointer' }}
               onMouseOver={(e) => e.currentTarget.style.color = 'var(--secondary)'}
               onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
             >
-              Platform
+              Capabilities
             </button>
             <button 
               onClick={() => scrollToSection('organizations')}
@@ -136,7 +138,7 @@ const LandingPage = () => {
             </button>
           </nav>
 
-          {/* RIGHT: Actions */}
+          {/* DESKTOP ACTIONS */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} className="desktop-nav">
             <Link to="/login" className="btn btn-secondary" style={{ padding: '0.5rem 1.15rem' }}>
               Sign In
@@ -171,13 +173,7 @@ const LandingPage = () => {
                   <Link 
                     to="/admin/register"
                     onClick={() => setGetStartedDropdown(false)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      textDecoration: 'none'
-                    }}
+                    style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-color-alt)'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
@@ -188,13 +184,7 @@ const LandingPage = () => {
                   <Link 
                     to="/register"
                     onClick={() => setGetStartedDropdown(false)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      textDecoration: 'none'
-                    }}
+                    style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-color-alt)'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
@@ -205,13 +195,7 @@ const LandingPage = () => {
                   <Link 
                     to="/trainer/apply"
                     onClick={() => setGetStartedDropdown(false)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      textDecoration: 'none'
-                    }}
+                    style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none' }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-color-alt)'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
@@ -223,23 +207,17 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* MOBILE MENU BUTTON */}
+          {/* MOBILE TOGGLE BUTTON */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{
-              display: 'none',
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary)',
-              cursor: 'pointer'
-            }}
+            style={{ display: 'none', background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
             className="mobile-toggle-btn"
           >
             {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
 
-        {/* MOBILE MENU DRAWER */}
+        {/* MOBILE DRAWER */}
         {mobileMenuOpen && (
           <div style={{
             backgroundColor: 'var(--white)',
@@ -249,44 +227,17 @@ const LandingPage = () => {
             flexDirection: 'column',
             gap: '1rem'
           }}>
-            <button 
-              onClick={() => scrollToSection('overview')}
-              style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}
-            >
-              Overview
-            </button>
-            <button 
-              onClick={() => scrollToSection('how-it-works')}
-              style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}
-            >
-              How It Works
-            </button>
-            <button 
-              onClick={() => scrollToSection('platform')}
-              style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}
-            >
-              Platform
-            </button>
-            <button 
-              onClick={() => scrollToSection('organizations')}
-              style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}
-            >
-              For Organizations
-            </button>
+            <button onClick={() => scrollToSection('overview')} style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}>Overview</button>
+            <button onClick={() => scrollToSection('roles')} style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}>Portals</button>
+            <button onClick={() => scrollToSection('how-it-works')} style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}>How It Works</button>
+            <button onClick={() => scrollToSection('capabilities')} style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}>Capabilities</button>
+            <button onClick={() => scrollToSection('organizations')} style={{ background: 'none', border: 'none', textAlign: 'left', fontWeight: 600, color: 'var(--primary)', fontSize: '1rem' }}>For Organizations</button>
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <Link to="/login" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-                Sign In
-              </Link>
-              <Link to="/admin/register" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                Register Organization / Admin
-              </Link>
-              <Link to="/register" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center' }}>
-                Register as Trainee
-              </Link>
-              <Link to="/trainer/apply" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>
-                Apply as Trainer
-              </Link>
+              <Link to="/login" className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Sign In</Link>
+              <Link to="/admin/register" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Register Organization / Admin</Link>
+              <Link to="/register" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center' }}>Register as Trainee</Link>
+              <Link to="/trainer/apply" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>Apply as Trainer</Link>
             </div>
           </div>
         )}
@@ -294,192 +245,218 @@ const LandingPage = () => {
 
       {/* HERO SECTION */}
       <section style={{
-        padding: '5rem 0 4rem',
+        padding: '4.5rem 0 4rem',
         backgroundColor: 'var(--bg-color)',
-        borderBottom: '1px solid var(--border-color)',
-        overflow: 'hidden'
+        borderBottom: '1px solid var(--border-color)'
       }}>
-        <div className="container" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '3.5rem', alignItems: 'center' }} className="hero-grid">
-          
-          {/* HERO TEXT */}
-          <div>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.35rem 0.85rem',
-              backgroundColor: 'var(--secondary-bg)',
-              color: '#0369a1',
-              borderRadius: '20px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              marginBottom: '1.25rem',
-              border: '1px solid #bae6fd'
-            }}>
-              <Sparkles size={15} />
-              Digital Capacity Building & Learning Management
-            </div>
-
-            <h1 style={{
-              fontSize: '2.75rem',
-              fontWeight: 800,
-              color: 'var(--primary)',
-              lineHeight: 1.15,
-              marginBottom: '1.25rem',
-              letterSpacing: '-0.02em'
-            }}>
-              Build stronger organizations through better learning.
-            </h1>
-
-            <p style={{
-              fontSize: '1.1rem',
-              color: 'var(--text-muted)',
-              lineHeight: 1.6,
-              marginBottom: '2rem',
-              maxWidth: '560px'
-            }}>
-              Capacity Connect brings organizational training, Trainers, Trainees, assessments, learning resources and competency development into one centralized platform.
-            </p>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
-              <button onClick={() => scrollToSection('platform')} className="btn btn-primary" style={{ padding: '0.85rem 1.75rem', fontSize: '1rem', gap: '0.5rem' }}>
-                Explore Platform <ArrowRight size={18} />
-              </button>
-              
-              <Link to="/login" className="btn btn-secondary" style={{ padding: '0.85rem 1.5rem', fontSize: '1rem' }}>
-                Sign In
-              </Link>
-              
-              <Link to="/admin/register" style={{ fontSize: '0.925rem', fontWeight: 600, color: 'var(--secondary-hover)', padding: '0.5rem' }}>
-                Register Organization →
-              </Link>
-            </div>
-
-            {/* QUICK HIGHLIGHT TAGS */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '1.5rem',
-              marginTop: '2.5rem',
-              paddingTop: '2rem',
-              borderTop: '1px solid var(--border-color)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-dark)', fontWeight: 500 }}>
-                <CheckCircle size={18} style={{ color: 'var(--success)' }} /> Role-Based Governance
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-dark)', fontWeight: 500 }}>
-                <CheckCircle size={18} style={{ color: 'var(--success)' }} /> Key-Verified Access
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-dark)', fontWeight: 500 }}>
-                <CheckCircle size={18} style={{ color: 'var(--success)' }} /> Multi-Organization Support
-              </div>
-            </div>
-          </div>
-
-          {/* HERO VISUAL MOCKUP */}
-          <div style={{ position: 'relative' }}>
-            {/* Background Accent Card */}
-            <div style={{
-              backgroundColor: 'var(--primary)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              boxShadow: 'var(--shadow-lg)',
-              color: 'var(--white)'
-            }}>
-              {/* Header bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--primary-hover)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>
-                    National Environmental Institute • Workspace Overview
-                  </span>
-                </div>
-                <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Active Workspace</span>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: '3.5rem', alignItems: 'center' }} className="hero-grid">
+            
+            {/* HERO TEXT */}
+            <div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.35rem 0.85rem',
+                backgroundColor: 'var(--secondary-bg)',
+                color: '#0369a1',
+                borderRadius: '20px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                marginBottom: '1.25rem',
+                border: '1px solid #bae6fd'
+              }}>
+                <Sparkles size={15} />
+                Digital Capacity Building & Learning Management
               </div>
 
-              {/* Stats Bar */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
-                <div style={{ backgroundColor: 'var(--primary-light)', padding: '0.75rem', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Enrolled Courses</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>14 Active</div>
-                </div>
-                <div style={{ backgroundColor: 'var(--primary-light)', padding: '0.75rem', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Trainees</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>480 Joined</div>
-                </div>
-                <div style={{ backgroundColor: 'var(--primary-light)', padding: '0.75rem', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Assessments</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--secondary)' }}>92% Pass Rate</div>
-                </div>
-              </div>
+              <h1 style={{
+                fontSize: '2.75rem',
+                fontWeight: 800,
+                color: 'var(--primary)',
+                lineHeight: 1.15,
+                marginBottom: '1.25rem',
+                letterSpacing: '-0.02em'
+              }}>
+                Build stronger organizations through better learning.
+              </h1>
 
-              {/* Inner Dashboard Preview Cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <p style={{
+                fontSize: '1.075rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1.6,
+                marginBottom: '2rem',
+                maxWidth: '560px'
+              }}>
+                Capacity Connect brings organizational training, Trainers, Trainees, assessments, learning resources and competency development into one centralized platform.
+              </p>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+                <button onClick={() => scrollToSection('capabilities')} className="btn btn-primary" style={{ padding: '0.85rem 1.75rem', fontSize: '1rem', gap: '0.5rem' }}>
+                  Explore Platform <ArrowRight size={18} />
+                </button>
                 
-                {/* Item 1 */}
-                <div style={{
-                  backgroundColor: 'var(--white)',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  color: 'var(--text-dark)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '1rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--secondary-bg)', color: 'var(--secondary-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Compass size={20} />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>GIS & Remote Sensing Masterclass</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Instructor: Dr. Meera Nair • 3 Modules</div>
-                    </div>
+                <Link to="/login" className="btn btn-secondary" style={{ padding: '0.85rem 1.5rem', fontSize: '1rem' }}>
+                  Sign In
+                </Link>
+                
+                <Link to="/admin/register" style={{ fontSize: '0.925rem', fontWeight: 600, color: 'var(--secondary-hover)', padding: '0.5rem' }}>
+                  Register Organization →
+                </Link>
+              </div>
+
+              {/* HIGHLIGHT BADGES */}
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '1.5rem',
+                marginTop: '2.5rem',
+                paddingTop: '1.75rem',
+                borderTop: '1px solid var(--border-color)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-dark)', fontWeight: 500 }}>
+                  <CheckCircle size={18} style={{ color: 'var(--success)' }} /> Role-Based Governance
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-dark)', fontWeight: 500 }}>
+                  <CheckCircle size={18} style={{ color: 'var(--success)' }} /> Key-Verified Access
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-dark)', fontWeight: 500 }}>
+                  <CheckCircle size={18} style={{ color: 'var(--success)' }} /> Multi-Organization Support
+                </div>
+              </div>
+            </div>
+
+            {/* HERO PRODUCT PREVIEW (CAPABILITIES DEMO, NO FAKE STATS) */}
+            <div>
+              <div style={{
+                backgroundColor: 'var(--primary)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: 'var(--shadow-lg)',
+                color: 'var(--white)'
+              }}>
+                {/* Header bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--primary-hover)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981' }} />
+                    <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 500 }}>
+                      Workspace Dashboard Preview
+                    </span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>78% Avg Progress</span>
-                  </div>
+                  <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Platform Demo</span>
                 </div>
 
-                {/* Item 2 */}
-                <div style={{
-                  backgroundColor: 'var(--white)',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  color: 'var(--text-dark)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '1rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Target size={20} />
+                {/* Capability Modules Overview */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  
+                  {/* Module 1 */}
+                  <div style={{
+                    backgroundColor: 'var(--white)',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    color: 'var(--text-dark)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--secondary-bg)', color: 'var(--secondary-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <BookOpen size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Learning Management</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Structured Courses, Video Modules & PDF Library</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Competency Mapping Index</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Climate Science • Data Analytics • GIS</div>
+                    <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>Course Catalog</span>
+                  </div>
+
+                  {/* Module 2 */}
+                  <div style={{
+                    backgroundColor: 'var(--white)',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    color: 'var(--text-dark)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Assessment & Evaluation</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>MCQ Exams, Automated Grading & Score Logs</div>
+                      </div>
                     </div>
+                    <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>MCQ Engine</span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Expert Matched</span>
+
+                  {/* Module 3 */}
+                  <div style={{
+                    backgroundColor: 'var(--white)',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    color: 'var(--text-dark)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--success-bg)', color: '#065f46', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <UserCheck size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Trainer Verification</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Admin Approval Gate & Expertise Profiling</div>
+                      </div>
+                    </div>
+                    <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Governance</span>
                   </div>
+
+                  {/* Module 4 */}
+                  <div style={{
+                    backgroundColor: 'var(--white)',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    color: 'var(--text-dark)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Target size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Competency Mapping</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Align Training Needs with Verified Expertise</div>
+                      </div>
+                    </div>
+                    <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>Skill Alignment</span>
+                  </div>
+
                 </div>
 
               </div>
-
             </div>
-          </div>
 
+          </div>
         </div>
       </section>
 
-      {/* PROBLEM / VALUE SECTION */}
-      <section id="overview" style={{ padding: '5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
+      {/* VALUE PROPOSITION SECTION */}
+      <section id="overview" style={{ padding: '4.5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3.5rem' }}>
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Centralized Ecosystem
             </span>
@@ -487,11 +464,11 @@ const LandingPage = () => {
               One platform for organizational learning
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-              Organizations often manage training programs, subject-matter Trainers, learning resources, MCQ assessments, employee skills, and certifications across fragmented systems. Capacity Connect centralizes the entire capacity-building lifecycle into one unified system.
+              Organizations often manage training programs, subject-matter Trainers, learning resources, MCQ assessments, employee skills, and certifications across fragmented tools. Capacity Connect centralizes the entire capacity-building lifecycle into one unified system.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
             
             <div className="card" style={{ padding: '1.75rem' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: 'var(--secondary-bg)', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
@@ -545,10 +522,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* THREE ROLE SECTION */}
-      <section style={{ padding: '5rem 0', backgroundColor: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)' }}>
+      {/* THREE ROLES SECTION */}
+      <section id="roles" style={{ padding: '4.5rem 0', backgroundColor: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3.5rem' }}>
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Role-Based Governance
             </span>
@@ -560,7 +537,7 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
             
             {/* ADMIN CARD */}
             <div className="card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -569,7 +546,7 @@ const LandingPage = () => {
                   <Building2 size={22} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1.2 }}>Admin</h3>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1.2 }}>Organization Admin</h3>
                   <span style={{ fontSize: '0.825rem', color: 'var(--text-light)', fontWeight: 600 }}>Organization Control Center</span>
                 </div>
               </div>
@@ -577,7 +554,7 @@ const LandingPage = () => {
               <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, marginBottom: '1.5rem' }}>
                 <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: 'var(--text-dark)' }}>
                   <Check size={18} style={{ color: 'var(--secondary)', flexShrink: 0, marginTop: '2px' }} />
-                  <span>Manage organization settings and access keys</span>
+                  <span>Manage organization settings and workspace access keys</span>
                 </li>
                 <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: 'var(--text-dark)' }}>
                   <Check size={18} style={{ color: 'var(--secondary)', flexShrink: 0, marginTop: '2px' }} />
@@ -589,7 +566,7 @@ const LandingPage = () => {
                 </li>
                 <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.925rem', color: 'var(--text-dark)' }}>
                   <Check size={18} style={{ color: 'var(--secondary)', flexShrink: 0, marginTop: '2px' }} />
-                  <span>Oversee competency mapping and broadcast announcements</span>
+                  <span>Oversee competency mapping and publish announcements</span>
                 </li>
               </ul>
 
@@ -675,9 +652,9 @@ const LandingPage = () => {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" style={{ padding: '5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
+      <section id="how-it-works" style={{ padding: '4.5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3.5rem' }}>
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Structured Process
             </span>
@@ -685,13 +662,13 @@ const LandingPage = () => {
               How Capacity Connect works
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>
-              A transparent, step-by-step lifecycle connecting organization onboarding to verified skill improvement.
+              A transparent lifecycle connecting organization onboarding to verified skill improvement.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
             
-            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '0.5rem' }}>STEP 01</div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Organization Onboarding</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
@@ -699,15 +676,15 @@ const LandingPage = () => {
               </p>
             </div>
 
-            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '0.5rem' }}>STEP 02</div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Access Keys Generated</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Access Keys Issued</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                The system issues unique Trainee and Trainer access keys to control workspace registration.
+                The system generates unique Trainee and Trainer access keys to control workspace registration.
               </p>
             </div>
 
-            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '0.5rem' }}>STEP 03</div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Trainees Join Workspace</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
@@ -715,7 +692,7 @@ const LandingPage = () => {
               </p>
             </div>
 
-            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '0.5rem' }}>STEP 04</div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Trainer Verification</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
@@ -723,17 +700,17 @@ const LandingPage = () => {
               </p>
             </div>
 
-            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '0.5rem' }}>STEP 05</div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Courses & Assessments Delivered</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Courses & MCQ Delivered</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 Trainers publish video lectures, study materials, and MCQ assessments for active learning.
               </p>
             </div>
 
-            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)', position: 'relative' }}>
+            <div style={{ padding: '1.5rem', backgroundColor: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--secondary)', marginBottom: '0.5rem' }}>STEP 06</div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Progress & Competencies Tracked</h3>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Progress & Competency Tracked</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                 Admin monitors organizational skill growth, assessment results, and verified certificates.
               </p>
@@ -743,104 +720,15 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CAPACITY BUILDING SECTION */}
-      <section style={{ padding: '5rem 0', backgroundColor: 'var(--primary)', color: 'white' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '750px', margin: '0 auto 3.5rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Impact-Driven Learning
-            </span>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginTop: '0.5rem', marginBottom: '1rem', color: 'white' }}>
-              More than course management
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: '1.1rem', lineHeight: 1.6 }}>
-              Capacity Connect connects daily learning activity directly with the strategic skills and competencies an organization needs to cultivate.
-            </p>
-          </div>
-
-          {/* CONCEPTUAL FLOW VISUAL */}
-          <div style={{
-            backgroundColor: 'var(--primary-light)',
-            padding: '2.5rem 1.5rem',
-            borderRadius: '16px',
-            border: '1px solid var(--primary-hover)',
-            marginBottom: '3rem'
-          }}>
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '1rem'
-            }}>
-              {[
-                { label: 'Organization', icon: Building2 },
-                { label: 'People', icon: Users },
-                { label: 'Skills', icon: Target },
-                { label: 'Training', icon: BookOpen },
-                { label: 'Assessment', icon: FileText },
-                { label: 'Performance', icon: BarChart3 },
-                { label: 'Capacity Improvement', icon: Award }
-              ].map((step, idx, arr) => {
-                const StepIcon = step.icon;
-                return (
-                  <div key={step.label} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      backgroundColor: 'var(--primary)',
-                      padding: '0.75rem 1.25rem',
-                      borderRadius: '10px',
-                      border: '1px solid var(--primary-hover)',
-                      fontSize: '0.95rem',
-                      fontWeight: 600,
-                      color: 'white'
-                    }}>
-                      <StepIcon size={18} style={{ color: 'var(--secondary)' }} />
-                      {step.label}
-                    </div>
-                    {idx < arr.length - 1 && (
-                      <ArrowRight size={18} style={{ color: '#64748b', flexShrink: 0 }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginBottom: '0.5rem' }}>Aligned Development</h4>
-              <p style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                Ensure training courses map directly to technical and operational competencies required by the organization.
-              </p>
-            </div>
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginBottom: '0.5rem' }}>Measurable Skill Growth</h4>
-              <p style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                Evaluate participant growth through pre- and post-course MCQ assessments with detailed score tracking.
-              </p>
-            </div>
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginBottom: '0.5rem' }}>Verifiable Credentials</h4>
-              <p style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                Generate official digital certificates backed by organization records upon successful course completion.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* PLATFORM CAPABILITIES */}
-      <section id="platform" style={{ padding: '5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
+      <section id="capabilities" style={{ padding: '4.5rem 0', backgroundColor: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3.5rem' }}>
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Platform Features
             </span>
             <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.5rem', marginBottom: '1rem' }}>
-              Built for real organizational learning needs
+              Core platform capabilities
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem' }}>
               Comprehensive tools covering administration, content delivery, testing, and skill mapping.
@@ -877,8 +765,121 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* MULTI-ORGANIZATION SECTION */}
-      <section id="organizations" style={{ padding: '5rem 0', backgroundColor: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)' }}>
+      {/* CAPACITY BUILDING & COMPETENCY MAPPING */}
+      <section style={{ padding: '4.5rem 0', backgroundColor: 'var(--primary)', color: 'white' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', maxWidth: '750px', margin: '0 auto 3rem' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Impact-Driven Learning
+            </span>
+            <h2 style={{ fontSize: '2.25rem', fontWeight: 800, marginTop: '0.5rem', marginBottom: '1rem', color: 'white' }}>
+              Connect training needs with the right expertise
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '1.05rem', lineHeight: 1.6 }}>
+              Capacity Connect bridges daily training activity with the strategic skills an organization needs to develop.
+            </p>
+          </div>
+
+          {/* CONCEPTUAL FLOW DIAGRAM */}
+          <div style={{
+            backgroundColor: 'var(--primary-light)',
+            padding: '2rem 1.5rem',
+            borderRadius: '16px',
+            border: '1px solid var(--primary-hover)',
+            marginBottom: '3rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.85rem'
+            }}>
+              {[
+                { label: 'Organization', icon: Building2 },
+                { label: 'People', icon: Users },
+                { label: 'Skills', icon: Target },
+                { label: 'Training', icon: BookOpen },
+                { label: 'Assessment', icon: FileText },
+                { label: 'Capacity Improvement', icon: Award }
+              ].map((step, idx, arr) => {
+                const StepIcon = step.icon;
+                return (
+                  <div key={step.label} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      backgroundColor: 'var(--primary)',
+                      padding: '0.65rem 1.15rem',
+                      borderRadius: '10px',
+                      border: '1px solid var(--primary-hover)',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: 'white'
+                    }}>
+                      <StepIcon size={16} style={{ color: 'var(--secondary)' }} />
+                      {step.label}
+                    </div>
+                    {idx < arr.length - 1 && (
+                      <ArrowRight size={16} style={{ color: '#64748b', flexShrink: 0 }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* EXPERTISE MATCHING VISUAL DEMO */}
+          <div className="card" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem', backgroundColor: 'var(--white)', color: 'var(--text-dark)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', fontWeight: 700, fontSize: '1.1rem' }}>
+              <Target size={22} style={{ color: 'var(--secondary)' }} />
+              Competency & Expertise Matching Concept
+            </div>
+
+            <div style={{ backgroundColor: 'var(--bg-color)', padding: '1.25rem', borderRadius: '10px', marginBottom: '1.25rem', border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 600 }}>REQUIRED COMPETENCY</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', marginTop: '0.25rem' }}>
+                Cloud Computing & GIS Analysis
+              </div>
+            </div>
+
+            <div style={{ fontSize: '0.825rem', color: 'var(--text-light)', fontWeight: 600, marginBottom: '0.75rem' }}>
+              EVALUATED TRAINER EXPERTISE TAGS
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Trainer A</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Expertise: React, JavaScript</div>
+                </div>
+                <span className="badge badge-neutral">Unmatched</span>
+              </div>
+
+              <div style={{ backgroundColor: '#f0f9ff', padding: '0.85rem 1rem', borderRadius: '8px', border: '2px solid var(--secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)' }}>Trainer B</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--secondary-hover)', fontWeight: 600 }}>Expertise: AWS, Azure, Cloud, GIS</div>
+                </div>
+                <span className="badge badge-success">Optimal Match</span>
+              </div>
+
+              <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Trainer C</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Expertise: Communication, Leadership</div>
+                </div>
+                <span className="badge badge-neutral">Unmatched</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* MULTI-ORGANIZATION & CONTROLLED ACCESS */}
+      <section id="organizations" style={{ padding: '4.5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 3rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -888,199 +889,117 @@ const LandingPage = () => {
               One platform. Independent organization workspaces.
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-              Capacity Connect is designed for multi-tenant deployment. Multiple organizations operate independently on the platform while maintaining their own Admins, Trainers, Trainees, courses, and training records.
+              Capacity Connect supports multiple independent organizations on a single infrastructure. Each organization operates securely within its own isolated workspace.
             </p>
           </div>
 
-          {/* MULTI-ORG DIAGRAM */}
-          <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-            <div style={{
-              backgroundColor: 'var(--white)',
-              padding: '2.5rem 1.5rem',
-              borderRadius: '16px',
-              border: '1px solid var(--border-color)',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              
-              {/* Platform Core */}
+          {/* MULTI-ORG VISUAL */}
+          <div style={{
+            backgroundColor: 'var(--bg-color)',
+            padding: '2rem 1.5rem',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            marginBottom: '3rem'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.75rem',
                 backgroundColor: 'var(--primary)',
                 color: 'white',
-                padding: '0.85rem 2rem',
+                padding: '0.75rem 1.75rem',
                 borderRadius: '12px',
                 fontWeight: 700,
-                fontSize: '1.1rem',
-                marginBottom: '2.5rem',
-                boxShadow: 'var(--shadow-md)'
+                fontSize: '1rem'
               }}>
-                <Globe2 size={24} style={{ color: 'var(--secondary)' }} />
-                Capacity Connect Central Infrastructure
+                <Globe2 size={20} style={{ color: 'var(--secondary)' }} />
+                Capacity Connect Multi-Tenant Environment
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+              <div style={{ backgroundColor: 'var(--white)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>
+                  <Building2 size={18} style={{ color: 'var(--secondary)' }} /> Organization Workspace A
+                </div>
+                <ul style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <li>• Dedicated Organization Admin</li>
+                  <li>• Approved Internal Trainers</li>
+                  <li>• Verified Employee Trainees</li>
+                  <li>• Isolated Course Catalog</li>
+                </ul>
               </div>
 
-              {/* Workspaces Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>
-                    <Building2 size={18} style={{ color: 'var(--secondary)' }} /> Organization Workspace A
-                  </div>
-                  <ul style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <li>• Dedicated Organization Admin</li>
-                    <li>• Approved Internal Trainers</li>
-                    <li>• Verified Employee Trainees</li>
-                    <li>• Isolated Course Catalog</li>
-                  </ul>
+              <div style={{ backgroundColor: 'var(--white)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>
+                  <Building2 size={18} style={{ color: 'var(--secondary)' }} /> Organization Workspace B
                 </div>
-
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>
-                    <Building2 size={18} style={{ color: 'var(--secondary)' }} /> Organization Workspace B
-                  </div>
-                  <ul style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <li>• Dedicated Organization Admin</li>
-                    <li>• Approved Internal Trainers</li>
-                    <li>• Verified Employee Trainees</li>
-                    <li>• Isolated Course Catalog</li>
-                  </ul>
-                </div>
-
-                <div style={{ backgroundColor: 'var(--bg-color)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>
-                    <Building2 size={18} style={{ color: 'var(--secondary)' }} /> Organization Workspace C
-                  </div>
-                  <ul style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <li>• Dedicated Organization Admin</li>
-                    <li>• Approved Internal Trainers</li>
-                    <li>• Verified Employee Trainees</li>
-                    <li>• Isolated Course Catalog</li>
-                  </ul>
-                </div>
-
+                <ul style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <li>• Dedicated Organization Admin</li>
+                  <li>• Approved Internal Trainers</li>
+                  <li>• Verified Employee Trainees</li>
+                  <li>• Isolated Course Catalog</li>
+                </ul>
               </div>
 
+              <div style={{ backgroundColor: 'var(--white)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--primary)', fontWeight: 700 }}>
+                  <Building2 size={18} style={{ color: 'var(--secondary)' }} /> Organization Workspace C
+                </div>
+                <ul style={{ fontSize: '0.825rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <li>• Dedicated Organization Admin</li>
+                  <li>• Approved Internal Trainers</li>
+                  <li>• Verified Employee Trainees</li>
+                  <li>• Isolated Course Catalog</li>
+                </ul>
+              </div>
             </div>
           </div>
+
+          {/* GOVERNANCE PILLARS */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--secondary-bg)', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Key size={18} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)' }}>Key-Based Registration</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Registration restricted to authorized members using organization access keys.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--success-bg)', color: '#065f46', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <UserCheck size={18} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)' }}>Admin Approval Gate</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Trainers undergo explicit admin review and approval before publishing.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Lock size={18} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)' }}>Strict Role Boundaries</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Clear separation between Admin, Trainer, and Trainee capabilities.</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* ACCESS & TRUST SECTION */}
-      <section style={{ padding: '5rem 0', backgroundColor: 'var(--white)', borderBottom: '1px solid var(--border-color)' }}>
-        <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3.5rem', alignItems: 'center' }} className="trust-grid">
-            
-            <div>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Governance & Controls
-              </span>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--primary)', marginTop: '0.5rem', marginBottom: '1.25rem' }}>
-                Controlled organizational access
-              </h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-                Capacity Connect ensures structured access control so organizational training environments remain secure and restricted to verified personnel.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--secondary-bg)', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Key size={18} />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>Key-Based Registration</h4>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                      Admins generate organization access keys for Trainees and Trainers, preventing unauthorized signups.
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'var(--success-bg)', color: '#065f46', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <UserCheck size={18} />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>Admin Approval Gate</h4>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                      Trainer applications require explicit verification and approval by Organization Admins before teaching access is granted.
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Lock size={18} />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>Strict Role Boundaries</h4>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                      Separate dashboards for Admins, Trainers, and Trainees preserve data confidentiality and clear responsibilities.
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* COMPETENCY MAPPING DEMO CARD */}
-            <div className="card" style={{ padding: '2rem', backgroundColor: 'var(--bg-color-alt)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', color: 'var(--primary)', fontWeight: 700, fontSize: '1.1rem' }}>
-                <Target size={22} style={{ color: 'var(--secondary)' }} />
-                Competency & Expertise Matching
-              </div>
-
-              <div style={{ backgroundColor: 'var(--white)', padding: '1.25rem', borderRadius: '10px', marginBottom: '1rem', border: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 600 }}>REQUIRED COMPETENCY</div>
-                <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', marginTop: '0.25rem' }}>
-                  Cloud Computing & GIS Analysis
-                </div>
-              </div>
-
-              <div style={{ fontSize: '0.825rem', color: 'var(--text-light)', fontWeight: 600, marginBottom: '0.75rem' }}>
-                EVALUATED TRAINERS
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                
-                <div style={{ backgroundColor: 'var(--white)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Trainer A (Aarav Sharma)</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Skills: React, JavaScript</div>
-                  </div>
-                  <span className="badge badge-neutral">Unmatched</span>
-                </div>
-
-                <div style={{ backgroundColor: 'var(--white)', padding: '0.85rem 1rem', borderRadius: '8px', border: '2px solid var(--secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)' }}>Trainer B (Dr. Meera Nair)</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-hover)', fontWeight: 600 }}>Skills: AWS, Azure, Cloud, GIS</div>
-                  </div>
-                  <span className="badge badge-success">Optimal Match</span>
-                </div>
-
-                <div style={{ backgroundColor: 'var(--white)', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Trainer C (Rahul Kumar)</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>Skills: Communication, Leadership</div>
-                  </div>
-                  <span className="badge badge-neutral">Unmatched</span>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* FINAL CTA SECTION */}
-      <section style={{ padding: '5rem 0', backgroundColor: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)' }}>
+      {/* FINAL CTA */}
+      <section style={{ padding: '4.5rem 0', backgroundColor: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="container" style={{ textAlign: 'center', maxWidth: '760px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '1rem', lineHeight: 1.2 }}>
             Bring your organization's learning ecosystem together.
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2.5rem' }}>
             Centralize training programs, verify trainer expertise, deliver standardized assessments, and measure competency growth across your workforce.
           </p>
 
@@ -1121,9 +1040,9 @@ const LandingPage = () => {
               <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'white', marginBottom: '1rem' }}>Platform</h4>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.9rem' }}>
                 <li><button onClick={() => scrollToSection('overview')} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}>Overview</button></li>
+                <li><button onClick={() => scrollToSection('roles')} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}>Portals</button></li>
                 <li><button onClick={() => scrollToSection('how-it-works')} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}>How It Works</button></li>
-                <li><button onClick={() => scrollToSection('platform')} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}>Capabilities</button></li>
-                <li><button onClick={() => scrollToSection('organizations')} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}>Organizations</button></li>
+                <li><button onClick={() => scrollToSection('capabilities')} style={{ background: 'none', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}>Capabilities</button></li>
               </ul>
             </div>
 
@@ -1138,7 +1057,7 @@ const LandingPage = () => {
               </ul>
             </div>
 
-            {/* INFO */}
+            {/* GOVERNANCE */}
             <div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'white', marginBottom: '1rem' }}>Governance</h4>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.9rem', color: '#cbd5e1' }}>
@@ -1164,7 +1083,7 @@ const LandingPage = () => {
         </div>
       </footer>
 
-      {/* RESPONSIVE LANDING PAGE STYLES */}
+      {/* RESPONSIVE STYLES */}
       <style>{`
         @media (max-width: 1023px) {
           .desktop-nav {
@@ -1174,9 +1093,6 @@ const LandingPage = () => {
             display: block !important;
           }
           .hero-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .trust-grid {
             grid-template-columns: 1fr !important;
           }
           .footer-grid {

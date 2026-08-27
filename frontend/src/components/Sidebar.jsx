@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const menuItems = [
@@ -73,9 +73,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1.2 }}>Capacity Connect</h2>
-            <span className="badge badge-neutral" style={{ marginTop: '0.25rem' }}>
-              MoES Trainee Portal
-            </span>
+            <p style={{ marginTop: '0.25rem', fontSize: '0.85rem', color: 'var(--text-light)', fontWeight: 600 }}>
+              {user?.organizationName || 'Trainee Portal'}
+            </p>
           </div>
           <button 
             className="mobile-close-btn"

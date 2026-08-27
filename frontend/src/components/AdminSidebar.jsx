@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 
 const AdminSidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -82,7 +82,12 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
         <div style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1.2 }}>Capacity Connect</h2>
-            <span className="badge badge-neutral" style={{ marginTop: '0.25rem' }}>Admin Portal</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.25rem' }}>
+              <span className="badge badge-neutral" style={{ alignSelf: 'flex-start' }}>Admin Portal</span>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 600 }}>
+                {user?.organizationName}
+              </p>
+            </div>
           </div>
           <button 
             className="mobile-close-btn" onClick={() => setIsOpen(false)}

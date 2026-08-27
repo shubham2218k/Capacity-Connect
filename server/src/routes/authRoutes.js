@@ -1,12 +1,23 @@
 const express = require('express');
-const router = express.Router();
-const { registerTrainee, applyTrainer, login, getMe, updateProfile } = require('../controllers/authController');
+const {
+  adminRegister,
+  traineeRegister,
+  trainerApply,
+  validateKey,
+  login,
+  me
+} = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const asyncHandler = require('../utils/asyncHandler');
 
-router.post('/register', registerTrainee);
-router.post('/trainer-apply', applyTrainer);
-router.post('/login', login);
-router.get('/me', protect, getMe);
-router.patch('/profile', protect, updateProfile);
+const router = express.Router();
+
+router.post('/admin-register', asyncHandler(adminRegister));
+router.post('/trainee-register', asyncHandler(traineeRegister));
+router.post('/register', asyncHandler(traineeRegister)); // alias kept for the existing frontend
+router.post('/trainer-apply', asyncHandler(trainerApply));
+router.post('/validate-key', asyncHandler(validateKey));
+router.post('/login', asyncHandler(login));
+router.get('/me', asyncHandler(protect), asyncHandler(me));
 
 module.exports = router;

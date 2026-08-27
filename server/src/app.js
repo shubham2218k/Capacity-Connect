@@ -1,55 +1,64 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
+
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const courseRoutes = require('./routes/courseRoutes');
-const resourceRoutes = require('./routes/resourceRoutes');
-const enrollmentRoutes = require('./routes/enrollmentRoutes');
-const assessmentRoutes = require('./routes/assessmentRoutes');
-const trainerRoutes = require('./routes/trainerRoutes');
-
-// Load env vars
-dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+// Allow the Vite dev server locally, plus CLIENT_URL for deployments.
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // No origin = curl / server-to-server calls.
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
+    credentials: true
+  })
+);
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Static folder for uploads
-app.use('/uploads', express.static('uploads'));
-
-// Health check route
 app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Capacity Connect API running',
-    database: 'connected'
-  });
+  res.json({ success: true, message: 'Capacity Connect API running' });
 });
 
-// Mount routers
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/trainer', trainerRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/resources', resourceRoutes);
-app.use('/api/enrollments', enrollmentRoutes);
-app.use('/api/assessments', assessmentRoutes);
-// app.use('/api/notifications', notificationRoutes);
-// app.use('/api/announcements', announcementRoutes);
-// app.use('/api/feedback', feedbackRoutes);
 
-// Global Error Handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found.` });
+});
+
+// Central error handler - always answers with { success, message }.
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.statusCode || 500).json({
+  console.error(err.message);
+
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || {})[0];
+    return res.status(409).json({
+      success: false,
+      message: field === 'email' ? 'Email already registered.' : `That ${field || 'value'} is already in use.`
+    });
+  }
+
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      message: Object.values(err.errors).map((e) => e.message).join(' ')
+    });
+  }
+
+  return res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Server Error',
-    data: null
+    message: err.message || 'Something went wrong on the server.'
   });
 });
 

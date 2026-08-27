@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CheckCircle, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
 const TrainerApplication = () => {
   const navigate = useNavigate();
+  const { applyAsTrainer } = useAuth();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,15 +21,74 @@ const TrainerApplication = () => {
     highestQualification: '',
     institution: '',
     experienceYears: '',
-    bio: ''
+    bio: '',
+    accessKey: ''
   });
 
   const [skills, setSkills] = useState([]);
   const [currentSkill, setCurrentSkill] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [keyValidating, setKeyValidating] = useState(false);
+  const [keyError, setKeyError] = useState('');
+  const [orgDetected, setOrgDetected] = useState(null);
 
   const availableSkills = ['GIS', 'Remote Sensing', 'Climate Science', 'Data Analytics', 'Management', 'Communication', 'Earthquake Eng.', 'Meteorology'];
+
+  // Checks the key and returns the result, so the submit handler can reuse it
+  // instead of depending on state that may not have landed yet.
+  const verifyKey = useCallback(async (rawKey) => {
+    const key = (rawKey || '').trim();
+
+    if (!key) {
+      setOrgDetected(null);
+      setKeyError('');
+      setFormData(prev => ({ ...prev, organization: '' }));
+      return { ok: false, message: 'Please enter your Organization Trainer Access Key.' };
+    }
+
+    setKeyValidating(true);
+    setKeyError('');
+
+    try {
+      const response = await api.post('/auth/validate-key', { key, type: 'Trainer' });
+      const organizationName = response?.data?.organizationName || null;
+
+      if (!organizationName) {
+        setOrgDetected(null);
+        setFormData(prev => ({ ...prev, organization: '' }));
+        setKeyError('Invalid organization access key.');
+        return { ok: false, message: 'Invalid organization access key.' };
+      }
+
+      setOrgDetected(organizationName);
+      setFormData(prev => ({ ...prev, organization: organizationName }));
+      return { ok: true, organizationName };
+    } catch (err) {
+      const message = err?.message || 'Invalid organization access key.';
+      setOrgDetected(null);
+      setFormData(prev => ({ ...prev, organization: '' }));
+      setKeyError(message);
+      return { ok: false, message };
+    } finally {
+      setKeyValidating(false);
+    }
+  }, []);
+
+  // Verify shortly after the user stops typing - no blur or button click needed.
+  useEffect(() => {
+    const key = formData.accessKey.trim();
+
+    if (!key) {
+      setOrgDetected(null);
+      setKeyError('');
+      return undefined;
+    }
+
+    const timer = setTimeout(() => { verifyKey(key); }, 500);
+    return () => clearTimeout(timer);
+  }, [formData.accessKey, verifyKey]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -46,7 +107,7 @@ const TrainerApplication = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -54,26 +115,37 @@ const TrainerApplication = () => {
 
     setIsSubmitting(true);
     try {
+      // If the key has not been confirmed yet (or is still being checked),
+      // verify it now rather than refusing to submit.
+      let organizationName = orgDetected;
+      if (!organizationName) {
+        const result = await verifyKey(formData.accessKey);
+        if (!result.ok) {
+          setError(result.message);
+          return;
+        }
+        organizationName = result.organizationName;
+      }
+
       const payload = {
+        trainerAccessKey: formData.accessKey.trim(),
         name: formData.fullName,
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
-        organization: formData.organization,
         department: formData.department,
         designation: formData.designation,
         qualification: formData.highestQualification,
         expertise: skills,
         experience: formData.experienceYears
       };
-      const response = await api.post('/auth/trainer-apply', payload);
-      if (response.success) {
+
+      const result = await applyAsTrainer(payload);
+      if (result.success) {
         setIsSubmitted(true);
       } else {
-        setError(response.message || 'Application failed');
+        setError(result.message || 'Application failed');
       }
-    } catch (err) {
-      setError('An error occurred during application');
     } finally {
       setIsSubmitting(false);
     }
@@ -84,12 +156,12 @@ const TrainerApplication = () => {
       <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-color)', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
         <div className="card" style={{ maxWidth: '500px', width: '100%', padding: '3rem 2rem', textAlign: 'center' }}>
           <CheckCircle size={64} style={{ color: 'var(--success)', margin: '0 auto 1.5rem' }} />
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem' }}>Application Submitted</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem' }}>Trainer application submitted successfully.</h1>
           <div className="badge badge-warning" style={{ fontSize: '1rem', padding: '0.5rem 1rem', marginBottom: '1.5rem' }}>
             Status: Pending Admin Approval
           </div>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Thank you for applying to be a trainer on Capacity Connect. Your application is currently under review by the administration team. You will receive an email once your account has been approved and activated.
+            Your account is awaiting Admin approval. You will be able to sign in to the Trainer Portal once an administrator of your organization approves your application.
           </p>
           <Link to="/login" className="btn btn-primary" style={{ width: '100%' }}>
             Return to Login
@@ -120,6 +192,44 @@ const TrainerApplication = () => {
         )}
 
         <form onSubmit={handleSubmit}>
+          
+          {/* Section 0: Access Key */}
+          <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem', backgroundColor: 'var(--bg-color-alt)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', color: 'var(--primary)' }}>
+              Organization Verification
+            </h2>
+            
+            <div className="input-group" style={{ marginBottom: orgDetected || keyError ? '0.5rem' : '0' }}>
+              <label htmlFor="accessKey">Organization Access Key (Trainer) *</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  id="accessKey"
+                  name="accessKey"
+                  value={formData.accessKey}
+                  onChange={handleChange}
+                  placeholder="e.g. CC-TNR-XXXXXX"
+                  autoComplete="off"
+                  style={{ flex: 1, minWidth: 0 }}
+                  required
+                />
+                <button type="button" onClick={() => verifyKey(formData.accessKey)} disabled={!formData.accessKey.trim()} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', whiteSpace: 'nowrap' }}>
+                  {keyValidating ? 'Verifying...' : 'Verify'}
+                </button>
+              </div>
+            </div>
+
+            {keyError && (
+              <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: 0 }}>{keyError}</p>
+            )}
+            
+            {orgDetected && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)', fontSize: '0.9rem', fontWeight: 600 }}>
+                <CheckCircle size={16} /> <span>Organization verified: {orgDetected}</span>
+              </div>
+            )}
+          </div>
+
           {/* Personal Information */}
           <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
@@ -157,7 +267,7 @@ const TrainerApplication = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
               <div className="input-group">
                 <label>Organization *</label>
-                <input type="text" name="organization" value={formData.organization} onChange={handleChange} required placeholder="e.g. Ministry of Earth Sciences" />
+                <input type="text" name="organization" value={formData.organization} readOnly placeholder="Verified from Access Key" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-light)' }} />
               </div>
               <div className="input-group">
                 <label>Department</label>
@@ -251,7 +361,9 @@ const TrainerApplication = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '4rem' }}>
             <Link to="/login" className="btn btn-outline">Cancel</Link>
-            <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2rem' }}>Submit Trainer Application</button>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '0.75rem 2rem', opacity: isSubmitting ? 0.7 : 1 }}>
+              {isSubmitting ? 'Submitting...' : 'Submit Trainer Application'}
+            </button>
           </div>
         </form>
 

@@ -14,6 +14,7 @@ import MCQExperience from './pages/MCQExperience';
 import Certificates from './pages/Certificates';
 import Profile from './pages/Profile';
 import TrainerApplication from './pages/TrainerApplication';
+import AdminRegister from './pages/admin/AdminRegister';
 
 import TrainerLayout from './layouts/TrainerLayout';
 // Trainer Pages
@@ -56,6 +57,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/trainer/apply" element={<TrainerApplication />} />
+          <Route path="/admin/register" element={<AdminRegister />} />
           
           <Route path="/trainee" element={<TraineeLayout />}>
             <Route index element={<Navigate to="/trainee/dashboard" replace />} />

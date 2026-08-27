@@ -1,5 +1,5 @@
 import { useAuth } from '../../context/AuthContext';
-import { Users, BookOpen, UserCheck, ShieldAlert, Activity, FileText, CheckCircle, Clock } from 'lucide-react';
+import { Users, BookOpen, UserCheck, ShieldAlert, Activity, FileText, CheckCircle, Clock, Copy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
@@ -23,6 +23,35 @@ const AdminDashboard = () => {
         </h1>
         <p style={{ color: 'var(--text-light)' }}>Welcome to the Capacity Connect Administration Portal, {user.name}.</p>
       </div>
+
+      {user.traineeKey && user.trainerKey && (
+        <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem', backgroundColor: 'var(--primary-light)', borderLeft: '4px solid var(--primary)' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem' }}>Organization Access Keys</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-dark)', marginBottom: '1.5rem' }}>
+            Share these keys with your members to allow them to register under <strong>{user.organizationName}</strong>.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div style={{ flex: '1 1 300px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '0.5rem' }}>Trainee Access Key</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input type="text" value={user.traineeKey} readOnly style={{ flex: 1, padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--white)', fontWeight: 600, fontFamily: 'monospace' }} />
+                <button type="button" onClick={() => { navigator.clipboard.writeText(user.traineeKey); alert('Copied to clipboard'); }} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Copy size={16} /> Copy
+                </button>
+              </div>
+            </div>
+            <div style={{ flex: '1 1 300px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '0.5rem' }}>Trainer Access Key</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input type="text" value={user.trainerKey} readOnly style={{ flex: 1, padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--white)', fontWeight: 600, fontFamily: 'monospace' }} />
+                <button type="button" onClick={() => { navigator.clipboard.writeText(user.trainerKey); alert('Copied to clipboard'); }} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Copy size={16} /> Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>

@@ -1,33 +1,19 @@
 const express = require('express');
-const router = express.Router();
-const { 
-  getPendingTrainers, 
-  getTrainerById, 
-  approveTrainer, 
-  rejectTrainer,
-  getUsers,
-  getUserById,
-  updateUserStatus
+const {
+  getTrainerApplications,
+  approveTrainer,
+  rejectTrainer
 } = require('../controllers/adminController');
-const { getAdminAnalytics } = require('../controllers/analyticsController');
 const { protect, authorizeRoles } = require('../middleware/auth');
+const asyncHandler = require('../utils/asyncHandler');
 
-// All routes in this file require Admin role
-router.use(protect);
-router.use(authorizeRoles('Admin'));
+const router = express.Router();
 
-// Trainer Approval routes
-router.get('/trainers/pending', getPendingTrainers);
-router.get('/trainers/:id', getTrainerById);
-router.patch('/trainers/:id/approve', approveTrainer);
-router.patch('/trainers/:id/reject', rejectTrainer);
+// Everything below is Admin only.
+router.use(asyncHandler(protect), authorizeRoles('Admin'));
 
-// General User Management routes
-router.get('/users', getUsers);
-router.get('/users/:id', getUserById);
-router.patch('/users/:id/status', updateUserStatus);
-
-// Analytics
-router.get('/analytics', getAdminAnalytics);
+router.get('/trainer-applications', asyncHandler(getTrainerApplications));
+router.patch('/trainer-applications/:id/approve', asyncHandler(approveTrainer));
+router.patch('/trainer-applications/:id/reject', asyncHandler(rejectTrainer));
 
 module.exports = router;

@@ -3,22 +3,33 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
+  const [role, setRole] = useState('Trainee');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [accessKey, setAccessKey] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError('Please fill in email and password');
       return;
     }
-    
-    // Use the auth context login which handles mock validation
-    const result = await login(email, password);
-    
+
+    if ((role === 'Trainee' || role === 'Trainer') && !accessKey) {
+      setError(`Please enter your Organization ${role} Access Key`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await login(email, password, role, accessKey);
+    setIsSubmitting(false);
+
     if (result.success) {
       if (result.role === 'Admin') {
         navigate('/admin/dashboard');
@@ -28,20 +39,7 @@ const Login = () => {
         navigate('/trainee/dashboard');
       }
     } else {
-      setError(result.message || 'Login failed'); // Use result.message because AuthContext uses message, not error
-    }
-  };
-
-  const handleDemoLogin = (role) => {
-    if (role === 'Trainee') {
-      setEmail('aarav@moes.gov.in');
-      setPassword('password123');
-    } else if (role === 'Trainer') {
-      setEmail('trainer@capacityconnect.demo');
-      setPassword('password123');
-    } else if (role === 'Admin') {
-      setEmail('admin@capacityconnect.in');
-      setPassword('admin123');
+      setError(result.message || 'Login failed');
     }
   };
 
@@ -64,6 +62,33 @@ const Login = () => {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <label>I am logging in as a:</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {['Trainee', 'Trainer', 'Admin'].map(r => (
+                <button
+                  type="button"
+                  key={r}
+                  onClick={() => { setRole(r); setAccessKey(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '0.5rem',
+                    borderRadius: '6px',
+                    border: `1px solid ${role === r ? 'var(--primary)' : 'var(--border-color)'}`,
+                    backgroundColor: role === r ? 'var(--primary-light)' : 'var(--white)',
+                    color: role === r ? 'var(--primary)' : 'var(--text-dark)',
+                    fontWeight: role === r ? 600 : 400,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="input-group" style={{ marginBottom: 0 }}>
             <label>Email Address</label>
             <input 
@@ -87,13 +112,25 @@ const Login = () => {
             />
           </div>
 
+          {role !== 'Admin' && (
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label>Organization Access Key ({role})</label>
+              <input 
+                type="text" 
+                value={accessKey} 
+                onChange={(e) => setAccessKey(e.target.value)}
+                placeholder={`Enter your ${role} access key`}
+              />
+            </div>
+          )}
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <input type="checkbox" id="remember" />
             <label htmlFor="remember" style={{ fontSize: '0.9rem', color: 'var(--text-dark)' }}>Remember me</label>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem' }}>
-            Sign In
+          <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem', opacity: isSubmitting ? 0.7 : 1 }}>
+            {isSubmitting ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
@@ -108,15 +145,9 @@ const Login = () => {
           <Link to="/trainer/apply" className="btn btn-outline" style={{ width: '100%' }}>
             Apply as Trainer
           </Link>
-        </div>
-
-        <div style={{ marginTop: '2.5rem', backgroundColor: 'var(--bg-color-alt)', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem' }}>
-          <p style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-dark)' }}>Demo Access:</p>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button onClick={() => handleDemoLogin('Trainee')} className="btn btn-ghost" style={{ padding: '0.25rem 0.5rem', flex: 1, fontSize: '0.8rem' }}>Load Trainee</button>
-            <button onClick={() => handleDemoLogin('Trainer')} className="btn btn-ghost" style={{ padding: '0.25rem 0.5rem', flex: 1, fontSize: '0.8rem' }}>Load Trainer</button>
-            <button onClick={() => handleDemoLogin('Admin')} className="btn btn-ghost" style={{ padding: '0.25rem 0.5rem', flex: 1, fontSize: '0.8rem' }}>Load Admin</button>
-          </div>
+          <Link to="/admin/register" style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600, marginTop: '0.5rem' }}>
+            Register Organization as Admin
+          </Link>
         </div>
 
       </div>

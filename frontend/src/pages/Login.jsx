@@ -76,8 +76,8 @@ const Login = () => {
                     padding: '0.5rem',
                     borderRadius: '6px',
                     border: `1px solid ${role === r ? 'var(--primary)' : 'var(--border-color)'}`,
-                    backgroundColor: role === r ? 'var(--primary-light)' : 'var(--white)',
-                    color: role === r ? 'var(--primary)' : 'var(--text-dark)',
+                    backgroundColor: role === r ? 'var(--primary)' : 'var(--white)',
+                    color: role === r ? 'var(--white)' : 'var(--text-dark)',
                     fontWeight: role === r ? 600 : 400,
                     cursor: 'pointer',
                     transition: 'all 0.2s'

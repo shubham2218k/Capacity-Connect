@@ -166,11 +166,15 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
   font-weight: 600;
   line-height: 1;
 }
+html {
+  scroll-behavior: smooth;
+}
+
 .badge-success { background: var(--success-bg); color: #065f46; }
 .badge-warning { background: var(--warning-bg); color: #92400e; }
 .badge-danger { background: var(--danger-bg); color: #991b1b; }
-.badge-primary { background: var(--secondary-bg); color: var(--secondary-hover); }
-.badge-neutral { background: var(--bg-color-alt); color: var(--text-muted); }
+.badge-primary { background: var(--secondary-bg); color: #0369a1; }
+.badge-neutral { background: var(--bg-color-alt); color: #334155; }
 
 /* Forms */
 .input-group {
@@ -191,6 +195,7 @@ input[type="email"],
 input[type="password"],
 input[type="number"],
 input[type="date"],
+input[type="tel"],
 select,
 textarea {
   width: 100%;
@@ -203,6 +208,26 @@ textarea {
   font-size: 0.95rem;
   transition: all 0.2s ease;
   outline: none;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: #f1f5f9;
+  color: #475569;
+  cursor: not-allowed;
 }
 
 input:hover,

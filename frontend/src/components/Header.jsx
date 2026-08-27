@@ -1,29 +1,45 @@
-import { Search, Bell, Menu, UserCircle, LogOut } from 'lucide-react';
+import { Bell, Menu, UserCircle, LogOut, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { mockNotifications } from '../data/mockData';
+import { 
+  getNotificationsForUser, 
+  markAllAnnouncementsAsRead, 
+  markAnnouncementAsRead 
+} from '../services/announcementService';
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
-  
-  // Listen for custom notification events (mock real-time)
+  const [notifications, setNotifications] = useState([]);
+
+  const loadNotifications = () => {
+    if (user) {
+      const userNotifs = getNotificationsForUser(user);
+      setNotifications(userNotifs);
+    } else {
+      setNotifications([]);
+    }
+  };
+
+  // Real-time sync listening to custom event and browser storage event
   useEffect(() => {
-    const handleNewNotification = () => {
-      const localNotifs = JSON.parse(localStorage.getItem('cc_mock_notifications') || '[]');
-      if (localNotifs.length > 0) {
-        setNotifications([...localNotifs, ...mockNotifications]);
-      }
+    loadNotifications();
+
+    const handleUpdate = () => {
+      loadNotifications();
     };
-    
-    handleNewNotification(); // Initial load
-    window.addEventListener('new_notification', handleNewNotification);
-    return () => window.removeEventListener('new_notification', handleNewNotification);
-  }, []);
+
+    window.addEventListener('announcement_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('announcement_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -32,14 +48,16 @@ const Header = ({ toggleSidebar }) => {
     navigate('/login');
   };
 
-  const markAllAsRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    setNotifications(updated);
-    
-    // Also update local storage if they are there
-    const localNotifs = JSON.parse(localStorage.getItem('cc_mock_notifications') || '[]');
-    if (localNotifs.length > 0) {
-      localStorage.setItem('cc_mock_notifications', JSON.stringify(localNotifs.map(n => ({ ...n, read: true }))));
+  const handleMarkAllRead = () => {
+    if (!user) return;
+    markAllAnnouncementsAsRead(user);
+    loadNotifications();
+  };
+
+  const handleNotificationClick = (n) => {
+    if (!n.read && user) {
+      markAnnouncementAsRead(user, n.id);
+      loadNotifications();
     }
   };
 
@@ -63,7 +81,7 @@ const Header = ({ toggleSidebar }) => {
             background: 'none', 
             border: 'none', 
             color: 'var(--text-dark)',
-            display: 'none', // Shown via CSS media query
+            display: 'none',
             cursor: 'pointer'
           }}
         >
@@ -97,6 +115,7 @@ const Header = ({ toggleSidebar }) => {
             }}
             onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--border-color)'}
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-color-alt)'}
+            title="Notifications"
           >
             <Bell size={20} />
             {unreadCount > 0 && (
@@ -137,31 +156,64 @@ const Header = ({ toggleSidebar }) => {
               overflow: 'hidden'
             }}>
               <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-color)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Notifications</h3>
-                <button onClick={markAllAsRead} style={{ background: 'none', border: 'none', fontSize: '0.8rem', color: 'var(--secondary)', cursor: 'pointer', fontWeight: 500 }}>
-                  Mark all as read
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button onClick={handleMarkAllRead} style={{ background: 'none', border: 'none', fontSize: '0.8rem', color: 'var(--secondary)', cursor: 'pointer', fontWeight: 500 }}>
+                    Mark all as read
+                  </button>
+                )}
               </div>
-              <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+
+              <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
                 {notifications.length > 0 ? notifications.map(n => (
-                  <div key={n.id} style={{ 
-                    padding: '1rem', 
-                    borderBottom: '1px solid var(--border-color)',
-                    backgroundColor: n.read ? 'var(--white)' : 'var(--secondary-bg)',
-                    display: 'flex',
-                    gap: '1rem',
-                    alignItems: 'flex-start'
-                  }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: n.read ? 'transparent' : 'var(--secondary)', marginTop: '0.4rem' }}></div>
+                  <div 
+                    key={n.id} 
+                    onClick={() => handleNotificationClick(n)}
+                    style={{ 
+                      padding: '1rem', 
+                      borderBottom: '1px solid var(--border-color)',
+                      backgroundColor: n.read ? 'var(--white)' : '#f0f9ff',
+                      display: 'flex',
+                      gap: '0.75rem',
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease'
+                    }}
+                  >
+                    <div style={{ 
+                      width: '8px', 
+                      height: '8px', 
+                      borderRadius: '50%', 
+                      backgroundColor: n.read ? 'transparent' : 'var(--secondary)', 
+                      marginTop: '0.45rem',
+                      flexShrink: 0
+                    }} />
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>{n.title}</h4>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0 0.5rem 0', lineHeight: 1.4 }}>{n.message}</p>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{n.date || 'Just now'}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-dark)' }}>{n.title}</h4>
+                        {n.priority === 'Important' && (
+                          <span className="badge badge-danger" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>Important</span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0 0.5rem 0', lineHeight: 1.4 }}>
+                        {n.message || n.content}
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                        <span>Announcement • {n.date || 'Just now'}</span>
+                        {n.read && <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><CheckCircle2 size={12} /> Read</span>}
+                      </div>
                     </div>
                   </div>
                 )) : (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)' }}>
-                    No notifications yet
+                  <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-light)' }}>
+                    No notifications for your workspace
                   </div>
                 )}
               </div>
@@ -215,7 +267,7 @@ const Header = ({ toggleSidebar }) => {
               padding: '0.5rem'
             }}>
               <Link 
-                to={user?.role === 'Trainer' ? "/trainer/profile" : "/trainee/profile"} 
+                to={user?.role === 'Trainer' ? "/trainer/profile" : user?.role === 'Admin' ? "/admin/profile" : "/trainee/profile"} 
                 onClick={() => setDropdownOpen(false)}
                 style={{ 
                   display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', 

@@ -3,9 +3,22 @@ import { mockCourses, mockAssessments } from '../data/mockData';
 import CourseCard from '../components/CourseCard';
 import { BookOpen, Award, Clock, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getNotificationsForUser } from '../services/announcementService';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const handleUpdate = () => setTick(t => t + 1);
+    window.addEventListener('announcement_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('announcement_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
 
   // Mock enrolled courses (first two from our mock data)
   const enrolledCourses = [
@@ -150,17 +163,16 @@ const Dashboard = () => {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.25rem' }}>Announcements</h2>
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {(() => {
-                const stored = JSON.parse(localStorage.getItem('cc_announcements') || '[]');
-                const traineeNotices = stored.filter(a => a.target === 'All Organization Users' || a.target === 'Trainees');
+                const userNotices = getNotificationsForUser(user);
                 
-                if (traineeNotices.length === 0) {
-                  return <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>No active announcements.</p>;
+                if (userNotices.length === 0) {
+                  return <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>No active announcements for your workspace.</p>;
                 }
 
-                return traineeNotices.slice(0, 3).map((notice, i) => (
+                return userNotices.slice(0, 3).map((notice, i) => (
                   <div key={notice.id || i} style={{ borderLeft: notice.priority === 'Important' ? '3px solid var(--danger)' : '3px solid var(--secondary)', paddingLeft: '1rem' }}>
                     <h4 style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-dark)' }}>{notice.title}</h4>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem', lineHeight: 1.4 }}>{notice.content}</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem', lineHeight: 1.4 }}>{notice.message || notice.content}</p>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem' }}>{notice.date || 'Recent'}</span>
                   </div>
                 ));

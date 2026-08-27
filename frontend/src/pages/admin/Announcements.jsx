@@ -1,39 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Bell, Plus, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-
-const initialAnnouncements = [
-  { 
-    id: 'an1', 
-    title: 'System Maintenance Notice', 
-    content: 'Capacity Connect will undergo scheduled maintenance this Sunday from 02:00 AM to 04:00 AM IST. Please save your work.', 
-    target: 'All Organization Users', 
-    type: 'Important Update',
-    priority: 'Important',
-    date: '2026-08-25', 
-    status: 'Active' 
-  },
-  { 
-    id: 'an2', 
-    title: 'New Course: Advanced GIS', 
-    content: 'We are thrilled to announce the launch of a new course on Advanced GIS Mapping by Dr. Rajesh Kumar. Enrollments are now open.', 
-    target: 'Trainees', 
-    type: 'New Learning Content',
-    priority: 'Normal',
-    date: '2026-08-24', 
-    status: 'Active' 
-  },
-  { 
-    id: 'an3', 
-    title: 'Trainer Workshop', 
-    content: 'Mandatory workshop for all Trainers regarding the new assessment creation tools. Check your email for meeting links.', 
-    target: 'Trainers', 
-    type: 'General Announcement',
-    priority: 'Normal',
-    date: '2026-08-20', 
-    status: 'Active' 
-  }
-];
+import { 
+  getAnnouncementsForAdmin, 
+  createAnnouncement, 
+  updateAnnouncement, 
+  deleteAnnouncement,
+  getAudienceLabel,
+  normalizeAudience
+} from '../../services/announcementService';
 
 const Announcements = () => {
   const { user } = useAuth();
@@ -44,41 +19,45 @@ const Announcements = () => {
 
   const [formData, setFormData] = useState({
     title: '',
-    content: '',
-    target: 'All Organization Users',
-    type: 'General Announcement',
+    message: '',
+    audience: 'all',
+    type: 'announcement',
     priority: 'Normal',
-    date: new Date().toISOString().split('T')[0],
-    status: 'Active'
+    date: new Date().toISOString().split('T')[0]
   });
 
-  useEffect(() => {
-    const stored = localStorage.getItem('cc_announcements');
-    if (stored) {
-      setAnnouncements(JSON.parse(stored));
-    } else {
-      localStorage.setItem('cc_announcements', JSON.stringify(initialAnnouncements));
-      setAnnouncements(initialAnnouncements);
+  const loadAdminAnnouncements = () => {
+    if (user) {
+      const data = getAnnouncementsForAdmin(user);
+      setAnnouncements(data);
     }
-  }, []);
-
-  const saveAnnouncementsToStorage = (newList) => {
-    setAnnouncements(newList);
-    localStorage.setItem('cc_announcements', JSON.stringify(newList));
-    // Trigger custom event so other components update real-time
-    window.dispatchEvent(new Event('announcements_updated'));
   };
+
+  useEffect(() => {
+    loadAdminAnnouncements();
+
+    const handleUpdate = () => {
+      loadAdminAnnouncements();
+    };
+
+    window.addEventListener('announcement_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      window.removeEventListener('announcement_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [user]);
 
   const handleOpenCreateModal = () => {
     setEditingNotice(null);
     setFormData({
       title: '',
-      content: '',
-      target: 'All Organization Users',
-      type: 'General Announcement',
+      message: '',
+      audience: 'all',
+      type: 'announcement',
       priority: 'Normal',
-      date: new Date().toISOString().split('T')[0],
-      status: 'Active'
+      date: new Date().toISOString().split('T')[0]
     });
     setShowModal(true);
   };
@@ -86,38 +65,33 @@ const Announcements = () => {
   const handleOpenEditModal = (notice) => {
     setEditingNotice(notice);
     setFormData({
-      title: notice.title,
-      content: notice.content,
-      target: notice.target,
-      type: notice.type || 'General Announcement',
+      title: notice.title || '',
+      message: notice.message || notice.content || '',
+      audience: normalizeAudience(notice.audience || notice.target),
+      type: notice.type || 'announcement',
       priority: notice.priority || 'Normal',
-      date: notice.date,
-      status: notice.status || 'Active'
+      date: notice.date || (notice.createdAt ? notice.createdAt.split('T')[0] : new Date().toISOString().split('T')[0])
     });
     setShowModal(true);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.content.trim()) return;
+    if (!formData.title.trim() || !formData.message.trim()) return;
 
     if (editingNotice) {
-      const updated = announcements.map(a => a.id === editingNotice.id ? { ...a, ...formData } : a);
-      saveAnnouncementsToStorage(updated);
+      updateAnnouncement(user, editingNotice.id, formData);
     } else {
-      const newNotice = {
-        id: `an_${Date.now()}`,
-        ...formData
-      };
-      saveAnnouncementsToStorage([newNotice, ...announcements]);
+      createAnnouncement(user, formData);
     }
 
+    loadAdminAnnouncements();
     setShowModal(false);
   };
 
   const handleDelete = (id) => {
-    const filtered = announcements.filter(a => a.id !== id);
-    saveAnnouncementsToStorage(filtered);
+    deleteAnnouncement(user, id);
+    loadAdminAnnouncements();
     setDeleteConfirmId(null);
   };
 
@@ -181,19 +155,25 @@ const Announcements = () => {
                   </div>
                 </div>
                 <p style={{ color: 'var(--text-dark)', marginBottom: '1rem', lineHeight: 1.5 }}>
-                  {notice.content}
+                  {notice.message || notice.content}
                 </p>
                 <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', flexWrap: 'wrap' }}>
-                  <span style={{ color: 'var(--text-light)' }}><strong>Audience:</strong> {notice.target}</span>
-                  <span style={{ color: 'var(--text-light)' }}><strong>Type:</strong> {notice.type || 'General'}</span>
-                  <span style={{ color: 'var(--text-light)' }}><strong>Date:</strong> {notice.date}</span>
+                  <span style={{ color: 'var(--text-light)' }}>
+                    <strong>Audience:</strong> {getAudienceLabel(notice.audience || notice.target)}
+                  </span>
+                  <span style={{ color: 'var(--text-light)' }}>
+                    <strong>Organization:</strong> {notice.organizationName || user?.organizationName || 'Current Org'}
+                  </span>
+                  <span style={{ color: 'var(--text-light)' }}>
+                    <strong>Date:</strong> {notice.date || (notice.createdAt ? notice.createdAt.split('T')[0] : '')}
+                  </span>
                 </div>
               </div>
             </div>
           ))
         ) : (
           <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-light)' }}>
-            No announcements published yet. Click "New Announcement" to publish one.
+            No announcements published for {user?.organizationName || 'your organization'}. Click "New Announcement" to publish one.
           </div>
         )}
       </div>
@@ -226,8 +206,8 @@ const Announcements = () => {
               <div className="input-group" style={{ marginBottom: 0 }}>
                 <label>Message Content *</label>
                 <textarea 
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="Enter full announcement details for users..."
                   required
                   style={{ minHeight: '120px' }}
@@ -238,12 +218,12 @@ const Announcements = () => {
                 <div className="input-group" style={{ marginBottom: 0 }}>
                   <label>Target Audience *</label>
                   <select 
-                    value={formData.target}
-                    onChange={(e) => setFormData({ ...formData, target: e.target.value })}
+                    value={formData.audience}
+                    onChange={(e) => setFormData({ ...formData, audience: e.target.value })}
                   >
-                    <option value="All Organization Users">All Organization Users</option>
-                    <option value="Trainees">Trainees Only</option>
-                    <option value="Trainers">Trainers Only</option>
+                    <option value="all">All Organization Users</option>
+                    <option value="trainees">Trainees Only</option>
+                    <option value="trainers">Trainers Only</option>
                   </select>
                 </div>
 
@@ -253,10 +233,10 @@ const Announcements = () => {
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   >
-                    <option value="General Announcement">General Announcement</option>
-                    <option value="Important Update">Important Update</option>
-                    <option value="New Learning Content">New Learning Content</option>
-                    <option value="Achievement">Achievement</option>
+                    <option value="announcement">General Announcement</option>
+                    <option value="important">Important Update</option>
+                    <option value="learning-content">New Learning Content</option>
+                    <option value="achievement">Achievement</option>
                   </select>
                 </div>
               </div>

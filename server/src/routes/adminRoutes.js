@@ -11,7 +11,8 @@ const {
   getUserById,
   suspendUser,
   reactivateUser,
-  deleteUser
+  deleteUser,
+  getAdminDashboard
 } = require('../controllers/adminController');
 const { protect, authorizeRoles } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
@@ -20,6 +21,9 @@ const router = express.Router();
 
 // Everything below is Admin only.
 router.use(asyncHandler(protect), authorizeRoles('Admin'));
+
+// Admin Dashboard Route
+router.get('/dashboard', asyncHandler(getAdminDashboard));
 
 // Trainer Approval & Inspection Routes
 router.get('/trainer-applications', asyncHandler(getTrainerApplications));

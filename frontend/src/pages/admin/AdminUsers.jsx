@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Shield, Mail, Eye, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Shield, Mail, Eye, AlertCircle, RefreshCw, XCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { api } from '../../services/api';
 
 const AdminUsers = () => {
@@ -11,6 +11,13 @@ const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+
+  // Modals state
+  const [suspendTarget, setSuspendTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -27,6 +34,50 @@ const AdminUsers = () => {
       setUsers([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!suspendTarget) return;
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await api.patch(`/admin/users/${suspendTarget._id || suspendTarget.id}/suspend`);
+      setNotice(`${suspendTarget.name}'s account has been suspended.`);
+      setSuspendTarget(null);
+      await fetchUsers();
+    } catch (err) {
+      setActionError(err.message || 'Failed to suspend user account.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReactivate = async (u) => {
+    try {
+      setError(null);
+      setNotice(null);
+      await api.patch(`/admin/users/${u._id || u.id}/reactivate`);
+      setNotice(`${u.name}'s account has been reactivated.`);
+      await fetchUsers();
+    } catch (err) {
+      setError(err.message || 'Failed to reactivate account.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setActionLoading(true);
+      setActionError(null);
+      await api.delete(`/admin/users/${deleteTarget._id || deleteTarget.id}`);
+      setNotice(`${deleteTarget.name}'s account has been permanently deleted.`);
+      setDeleteTarget(null);
+      await fetchUsers();
+    } catch (err) {
+      setActionError(err.message || 'Failed to permanently delete account.');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -85,6 +136,12 @@ const AdminUsers = () => {
           <RefreshCw size={15} /> Refresh Users
         </button>
       </div>
+
+      {notice && (
+        <div style={{ backgroundColor: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          {notice}
+        </div>
+      )}
 
       {/* Filter and Search Card */}
       <div className="card" style={{ padding: '1.5rem', marginBottom: '1.75rem' }}>
@@ -168,60 +225,110 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map(user => (
-                  <tr key={user.id || user._id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.15s' }}>
-                    <td style={{ padding: '1rem 1.25rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1rem', flexShrink: 0 }}>
-                          {(user.name || 'U').charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 600, color: 'var(--text-dark)', fontSize: '0.95rem' }}>
-                            <Link to={`/admin/users/${user.id || user._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                              {user.name}
-                            </Link>
+                {filteredUsers.map(user => {
+                  const uid = user._id || user.id;
+                  const isAdmin = user.role === 'Admin';
+                  const isPendingTrainer = user.role === 'Trainer' && user.status === 'pending';
+
+                  return (
+                    <tr key={uid} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.15s' }}>
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                          <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'var(--primary-light)', color: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1rem', flexShrink: 0 }}>
+                            {(user.name || 'U').charAt(0).toUpperCase()}
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <Mail size={12} /> {user.email}
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-dark)', fontSize: '0.95rem' }}>
+                              <Link to={`/admin/users/${uid}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                {user.name}
+                              </Link>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-light)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Mail size={12} /> {user.email}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td style={{ padding: '1rem 1.25rem' }}>
-                      <span className={`badge ${
-                        user.role === 'Admin' ? 'badge-danger' : 
-                        user.role === 'Trainer' ? 'badge-primary' : 'badge-neutral'
-                      }`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.78rem' }}>
-                        {user.role === 'Admin' && <Shield size={12} />}
-                        {user.role}
-                      </span>
-                    </td>
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <span className={`badge ${
+                          user.role === 'Admin' ? 'badge-danger' : 
+                          user.role === 'Trainer' ? 'badge-primary' : 'badge-neutral'
+                        }`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.78rem' }}>
+                          {user.role === 'Admin' && <Shield size={12} />}
+                          {user.role}
+                        </span>
+                      </td>
 
-                    <td style={{ padding: '1rem 1.25rem', fontSize: '0.88rem', color: 'var(--text-dark)' }}>
-                      {user.department || '-'}
-                    </td>
+                      <td style={{ padding: '1rem 1.25rem', fontSize: '0.88rem', color: 'var(--text-dark)' }}>
+                        {user.department || '-'}
+                      </td>
 
-                    <td style={{ padding: '1rem 1.25rem' }}>
-                      <span style={{ 
-                        display: 'inline-block', padding: '0.25rem 0.65rem', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600,
-                        ...getStatusBadgeStyle(user.status)
-                      }}>
-                        {getStatusLabel(user.status)}
-                      </span>
-                    </td>
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <span style={{ 
+                          display: 'inline-block', padding: '0.25rem 0.65rem', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 600,
+                          ...getStatusBadgeStyle(user.status)
+                        }}>
+                          {getStatusLabel(user.status)}
+                        </span>
+                      </td>
 
-                    <td style={{ padding: '1rem 1.25rem', color: 'var(--text-light)', fontSize: '0.85rem' }}>
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
-                    </td>
+                      <td style={{ padding: '1rem 1.25rem', color: 'var(--text-light)', fontSize: '0.85rem' }}>
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                      </td>
 
-                    <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                      <Link to={`/admin/users/${user.id || user._id}`} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <Eye size={15} /> View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          
+                          {/* View link */}
+                          <Link 
+                            to={isPendingTrainer ? `/admin/trainer-approvals/${uid}` : `/admin/users/${uid}`} 
+                            className="btn btn-outline" 
+                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                          >
+                            <Eye size={15} /> {isPendingTrainer ? 'Review' : 'View'}
+                          </Link>
+
+                          {/* Suspend or Reactivate button (non-admin only) */}
+                          {!isAdmin && !isPendingTrainer && (
+                            user.status === 'suspended' ? (
+                              <button 
+                                onClick={() => handleReactivate(user)}
+                                className="btn btn-outline" 
+                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', color: '#166534', borderColor: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                                title="Reactivate Account"
+                              >
+                                <CheckCircle2 size={15} /> Reactivate
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => { setActionError(null); setSuspendTarget(user); }}
+                                className="btn btn-outline" 
+                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', color: '#b45309', borderColor: '#fcd34d', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                                title="Suspend Account"
+                              >
+                                <XCircle size={15} /> Suspend
+                              </button>
+                            )
+                          )}
+
+                          {/* Permanent Delete button (non-admin only) */}
+                          {!isAdmin && (
+                            <button 
+                              onClick={() => { setActionError(null); setDeleteTarget(user); }}
+                              className="btn btn-outline" 
+                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                              title="Delete Account Permanently"
+                            >
+                              <Trash2 size={15} /> Delete
+                            </button>
+                          )}
+
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -231,6 +338,71 @@ const AdminUsers = () => {
           </div>
         )}
       </div>
+
+      {/* --- SUSPEND CONFIRMATION MODAL --- */}
+      {suspendTarget && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--danger)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertCircle size={22} /> Suspend User Account
+            </h3>
+            
+            <p style={{ fontSize: '0.92rem', color: 'var(--text-dark)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Suspend <strong>{suspendTarget.name}</strong>'s account? The user will no longer be able to log in or use Capacity Connect until reactivated.
+            </p>
+
+            {actionError && (
+              <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                {actionError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button className="btn btn-outline" onClick={() => setSuspendTarget(null)} disabled={actionLoading}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" style={{ backgroundColor: '#b45309', borderColor: '#b45309' }} onClick={handleSuspend} disabled={actionLoading}>
+                {actionLoading ? 'Suspending...' : 'Confirm Suspend'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- DELETE CONFIRMATION MODAL --- */}
+      {deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--danger)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Trash2 size={22} /> Delete Account Permanently
+            </h3>
+            
+            <p style={{ fontSize: '0.92rem', color: 'var(--text-dark)', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+              Are you sure you want to permanently delete <strong>{deleteTarget.name}</strong> ({deleteTarget.email})?
+            </p>
+
+            <div style={{ backgroundColor: '#fff2f0', border: '1px solid #ffccc7', padding: '0.85rem 1rem', borderRadius: '6px', fontSize: '0.85rem', color: '#a8071a', marginBottom: '1.5rem' }}>
+              This permanently removes the user's account and profile from Capacity Connect. This action cannot be undone.
+            </div>
+
+            {actionError && (
+              <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                {actionError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button className="btn btn-outline" onClick={() => setDeleteTarget(null)} disabled={actionLoading}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={actionLoading}>
+                {actionLoading ? 'Deleting...' : 'Delete Account Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

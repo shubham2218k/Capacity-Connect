@@ -19,10 +19,10 @@ const AdminLayout = () => {
       <AdminSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%' }}>
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main style={{ padding: '2rem', flex: 1, overflowY: 'auto' }}>
+        <main style={{ padding: '2rem', flex: 1, overflowY: 'auto', minWidth: 0 }}>
           <Outlet />
         </main>
       </div>

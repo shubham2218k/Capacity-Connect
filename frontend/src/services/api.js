@@ -487,6 +487,32 @@ const getLocalData = (endpoint, method, body) => {
     return { status: 200, ok: true, data: { success: true, data: mockNotifications } };
   }
 
+  if (endpoint === '/admin/dashboard' && method === 'GET') {
+    const admin = getStoredUser();
+    const orgId = admin?.organizationId || null;
+    const users = getDB('mock_users', []);
+    const orgUsers = users.filter((u) => (!orgId || String(u.organizationId) === String(orgId)) && !u.isDeleted);
+    return {
+      status: 200,
+      ok: true,
+      data: {
+        success: true,
+        data: {
+          totalUsers: orgUsers.length,
+          activeTrainees: orgUsers.filter(u => u.role === 'Trainee' && u.status === 'active').length,
+          activeTrainers: orgUsers.filter(u => u.role === 'Trainer' && u.status === 'active').length,
+          suspendedUsers: orgUsers.filter(u => u.status === 'suspended').length,
+          pendingTrainerApprovals: orgUsers.filter(u => u.role === 'Trainer' && isPending(u.status)).length,
+          totalCourses: courses.length,
+          publishedCourses: courses.filter(c => c.status === 'published').length,
+          draftCourses: courses.filter(c => c.status === 'draft').length,
+          announcementsCount: 3,
+          recentActivity: []
+        }
+      }
+    };
+  }
+
   // --- Admin Data ---
   if (endpoint.includes('/users') || endpoint.includes('/admin/')) {
     const admin = getStoredUser();

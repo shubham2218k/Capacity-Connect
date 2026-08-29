@@ -1,27 +1,70 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Users, BookOpen, UserCheck, ShieldAlert, Activity, FileText, CheckCircle, Clock, Copy } from 'lucide-react';
+import { Users, BookOpen, UserCheck, Activity, FileText, CheckCircle, Clock, Copy, AlertCircle, Award, Megaphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api } from '../../services/api';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
-  
-  // Mock Stats for Admin
-  const stats = {
-    totalUsers: 1240,
-    activeTrainers: 45,
-    pendingApprovals: 8,
-    activeCourses: 32,
-    completionRate: 76,
-    systemAlerts: 2
+
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/admin/dashboard');
+      setDashboardData(res.data);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch admin dashboard data:', err);
+      setError(err.message || 'Unable to load organization overview.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      return new Date(dateStr).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return String(dateStr);
+    }
+  };
+
+  const stats = dashboardData || {
+    totalUsers: 0,
+    activeTrainees: 0,
+    activeTrainers: 0,
+    suspendedUsers: 0,
+    pendingTrainerApprovals: 0,
+    totalCourses: 0,
+    publishedCourses: 0,
+    draftCourses: 0,
+    announcementsCount: 0,
+    recentActivity: []
   };
 
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>
-          System Overview
+          Organization Overview
         </h1>
-        <p style={{ color: 'var(--text-light)' }}>Welcome to the Capacity Connect Administration Portal, {user.name}.</p>
+        <p style={{ color: 'var(--text-light)' }}>
+          Welcome to the Capacity Connect Administration Portal, {user.name}. Overview for <strong>{user.organizationName || 'your organization'}</strong>.
+        </p>
       </div>
 
       {user.traineeKey && user.trainerKey && (
@@ -53,6 +96,12 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {error && (
+        <div style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          {error}
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
         
@@ -61,8 +110,8 @@ const AdminDashboard = () => {
             <Users size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{stats.totalUsers}</div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>Total Platform Users</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{loading ? '-' : stats.totalUsers}</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>Total Organization Users</div>
           </div>
         </div>
 
@@ -71,7 +120,7 @@ const AdminDashboard = () => {
             <UserCheck size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{stats.pendingApprovals}</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{loading ? '-' : stats.pendingTrainerApprovals}</div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>Pending Trainer Approvals</div>
           </div>
         </div>
@@ -81,23 +130,24 @@ const AdminDashboard = () => {
             <BookOpen size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{stats.activeCourses}</div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>Active Courses</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{loading ? '-' : stats.publishedCourses}</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>Published Courses ({stats.totalCourses} Total)</div>
           </div>
         </div>
         
         <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '50%' }}>
-            <ShieldAlert size={24} />
+          <div style={{ padding: '0.75rem', backgroundColor: '#dcfce7', color: '#15803d', borderRadius: '50%' }}>
+            <Award size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{stats.systemAlerts}</div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>System Alerts</div>
+            <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>{loading ? '-' : stats.activeTrainers}</div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>Active Verified Trainers</div>
           </div>
         </div>
+
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', alignItems: 'start' }}>
         
         {/* Quick Actions */}
         <div className="card" style={{ padding: '1.5rem' }}>
@@ -111,57 +161,48 @@ const AdminDashboard = () => {
               <FileText size={24} style={{ color: 'var(--secondary)' }} />
               <span style={{ fontWeight: 600 }}>Post Announcement</span>
             </Link>
-            <Link to="/admin/reports" className="btn btn-outline" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1.5rem', height: 'auto', justifyContent: 'center' }}>
-              <Activity size={24} style={{ color: 'var(--success)' }} />
-              <span style={{ fontWeight: 600 }}>Generate Report</span>
+            <Link to="/admin/users" className="btn btn-outline" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1.5rem', height: 'auto', justifyContent: 'center' }}>
+              <Users size={24} style={{ color: 'var(--success)' }} />
+              <span style={{ fontWeight: 600 }}>Manage Users</span>
             </Link>
             <Link to="/admin/competencies" className="btn btn-outline" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1.5rem', height: 'auto', justifyContent: 'center' }}>
-              <Users size={24} style={{ color: 'var(--warning)' }} />
-              <span style={{ fontWeight: 600 }}>Manage Roles</span>
+              <Activity size={24} style={{ color: 'var(--warning)' }} />
+              <span style={{ fontWeight: 600 }}>Competency Map</span>
             </Link>
           </div>
         </div>
 
-        {/* Recent Platform Activity */}
+        {/* Recent Organization Activity */}
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Recent Platform Activity</h2>
-            <Link to="/admin/reports" style={{ color: 'var(--secondary)', fontSize: '0.875rem', fontWeight: 500, textDecoration: 'none' }}>View All</Link>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Recent Organization Activity</h2>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ color: 'var(--secondary)', marginTop: '2px' }}><CheckCircle size={18} /></div>
-              <div>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}><strong>System Backup</strong> completed successfully</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>10 mins ago</p>
-              </div>
+          {loading ? (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)' }}>
+              Loading recent activity...
             </div>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ color: 'var(--primary)', marginTop: '2px' }}><UserCheck size={18} /></div>
-              <div>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}><strong>New Trainer Application</strong> received from Dr. Rajesh Kumar</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>1 hour ago</p>
-              </div>
+          ) : stats.recentActivity && stats.recentActivity.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {stats.recentActivity.map((act, index) => (
+                <div key={index} style={{ display: 'flex', gap: '1rem', borderBottom: index < stats.recentActivity.length - 1 ? '1px solid var(--border-color)' : 'none', paddingBottom: '0.75rem' }}>
+                  <div style={{ color: act.type === 'trainer_application' ? '#b45309' : act.type === 'course_created' ? 'var(--secondary)' : 'var(--primary)', marginTop: '2px' }}>
+                    {act.type === 'trainer_application' ? <UserCheck size={18} /> : act.type === 'course_created' ? <BookOpen size={18} /> : <CheckCircle size={18} />}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.9rem', marginBottom: '0.25rem', color: 'var(--text-dark)' }}>
+                      <strong>{act.title}:</strong> {act.description}
+                    </p>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-light)', margin: 0 }}>{formatDate(act.createdAt)}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ color: '#b45309', marginTop: '2px' }}><BookOpen size={18} /></div>
-              <div>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}><strong>New Course Published:</strong> <em>Advanced GIS Mapping</em></p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>3 hours ago</p>
-              </div>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-light)' }}>
+              No recent organization activity.
             </div>
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ color: 'var(--danger)', marginTop: '2px' }}><ShieldAlert size={18} /></div>
-              <div>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}><strong>Failed Login Attempts</strong> spike detected</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>5 hours ago</p>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
       </div>

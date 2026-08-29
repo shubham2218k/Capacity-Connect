@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
+const Course = require('../models/Course');
 
 // Every admin action is scoped to the admin's own organization.
 const sameOrganization = (admin, user) =>
@@ -438,7 +439,7 @@ const reactivateUser = async (req, res) => {
   });
 };
 
-// DELETE /api/admin/users/:id  (Soft Delete)
+// DELETE /api/admin/users/:id (Permanent Delete)
 const deleteUser = async (req, res) => {
   const { id } = req.params;
 
@@ -460,14 +461,166 @@ const deleteUser = async (req, res) => {
     return res.status(400).json({ success: false, message: 'You cannot delete your own Admin account.' });
   }
 
-  targetUser.isDeleted = true;
-  targetUser.deletedAt = new Date();
-  targetUser.deletedBy = req.user._id;
-  await targetUser.save();
+  if (targetUser.role === 'Admin') {
+    return res.status(403).json({ success: false, message: 'Admin accounts cannot be deleted.' });
+  }
+
+  // If user is a Trainer, check if they own any Course documents
+  if (targetUser.role === 'Trainer') {
+    const hasCourses = await Course.exists({ trainer: targetUser._id });
+    if (hasCourses) {
+      return res.status(409).json({
+        success: false,
+        message: 'This Trainer owns existing courses. Reassign or remove those courses before permanently deleting the account.'
+      });
+    }
+
+    // Safely cleanup uploaded documents on disk if any exist
+    if (Array.isArray(targetUser.trainerDocuments) && targetUser.trainerDocuments.length > 0) {
+      targetUser.trainerDocuments.forEach(doc => {
+        if (doc.filename) {
+          const safeName = path.basename(doc.filename);
+          const filePath = path.join(__dirname, '../../uploads/trainer-documents', safeName);
+          try {
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          } catch (e) {
+            console.error(`Could not delete document file ${safeName}:`, e.message);
+          }
+        }
+      });
+    }
+  }
+
+  // Physically remove document from MongoDB
+  await User.deleteOne({ _id: targetUser._id });
 
   return res.json({
     success: true,
-    message: `${targetUser.name} was removed from your organization.`
+    message: `${targetUser.name}'s account has been permanently deleted.`
+  });
+};
+
+// GET /api/admin/dashboard
+const getAdminDashboard = async (req, res) => {
+  if (!req.user.organizationId) {
+    return res.json({
+      success: true,
+      data: {
+        totalUsers: 0,
+        activeTrainees: 0,
+        activeTrainers: 0,
+        suspendedUsers: 0,
+        pendingTrainerApprovals: 0,
+        totalCourses: 0,
+        publishedCourses: 0,
+        draftCourses: 0,
+        announcementsCount: 0,
+        recentActivity: []
+      }
+    });
+  }
+
+  const orgId = req.user.organizationId;
+  const Announcement = require('../models/Announcement');
+
+  const [
+    totalUsers,
+    activeTrainees,
+    activeTrainers,
+    suspendedUsers,
+    pendingTrainerApprovals,
+    totalCourses,
+    publishedCourses,
+    draftCourses,
+    announcementsCount,
+    recentUsers,
+    recentCourses,
+    recentAnnouncements
+  ] = await Promise.all([
+    User.countDocuments({ organizationId: orgId, isDeleted: { $ne: true } }),
+    User.countDocuments({ organizationId: orgId, role: 'Trainee', status: 'active', isDeleted: { $ne: true } }),
+    User.countDocuments({ organizationId: orgId, role: 'Trainer', status: 'active', isDeleted: { $ne: true } }),
+    User.countDocuments({ organizationId: orgId, status: 'suspended', isDeleted: { $ne: true } }),
+    User.countDocuments({ organizationId: orgId, role: 'Trainer', status: 'pending', isDeleted: { $ne: true } }),
+    Course.countDocuments({ organization: orgId }),
+    Course.countDocuments({ organization: orgId, status: 'published' }),
+    Course.countDocuments({ organization: orgId, status: 'draft' }),
+    Announcement.countDocuments({ organization: orgId, isDeleted: { $ne: true } }),
+
+    User.find({ organizationId: orgId, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(5),
+    Course.find({ organization: orgId }).sort({ createdAt: -1 }).limit(5),
+    Announcement.find({ organization: orgId, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(5)
+  ]);
+
+  const activityItems = [];
+
+  recentUsers.forEach(u => {
+    if (u.role === 'Trainer' && u.status === 'pending') {
+      activityItems.push({
+        type: 'trainer_application',
+        title: 'Trainer Application Submitted',
+        description: `${u.name} applied for Trainer verification (${u.department || 'Department'})`,
+        createdAt: u.createdAt,
+        entityId: u._id
+      });
+    } else if (u.role === 'Trainee') {
+      activityItems.push({
+        type: 'trainee_registration',
+        title: 'New Trainee Registered',
+        description: `${u.name} joined as Trainee`,
+        createdAt: u.createdAt,
+        entityId: u._id
+      });
+    } else if (u.role === 'Trainer' && u.status === 'active') {
+      activityItems.push({
+        type: 'trainer_approved',
+        title: 'Trainer Active',
+        description: `${u.name} is an active Trainer`,
+        createdAt: u.createdAt,
+        entityId: u._id
+      });
+    }
+  });
+
+  recentCourses.forEach(c => {
+    activityItems.push({
+      type: 'course_created',
+      title: c.status === 'published' ? 'Course Published' : 'Draft Course Created',
+      description: `"${c.title}" (${c.category})`,
+      createdAt: c.createdAt,
+      entityId: c._id
+    });
+  });
+
+  recentAnnouncements.forEach(a => {
+    activityItems.push({
+      type: 'announcement_posted',
+      title: 'Announcement Posted',
+      description: `"${a.title}"`,
+      createdAt: a.createdAt,
+      entityId: a._id
+    });
+  });
+
+  activityItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const recentActivity = activityItems.slice(0, 6);
+
+  return res.json({
+    success: true,
+    data: {
+      totalUsers,
+      activeTrainees,
+      activeTrainers,
+      suspendedUsers,
+      pendingTrainerApprovals,
+      totalCourses,
+      publishedCourses,
+      draftCourses,
+      announcementsCount,
+      recentActivity
+    }
   });
 };
 
@@ -483,5 +636,7 @@ module.exports = {
   getUserById,
   suspendUser,
   reactivateUser,
-  deleteUser
+  deleteUser,
+  getAdminDashboard
 };
+

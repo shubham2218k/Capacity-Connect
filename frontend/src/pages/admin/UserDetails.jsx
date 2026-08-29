@@ -343,18 +343,18 @@ const UserDetails = () => {
 
       {/* --- DELETE CONFIRMATION MODAL --- */}
       {showDeleteModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--danger)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Trash2 size={22} /> Remove User from Organization
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--danger)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Trash2 size={22} /> Delete Account Permanently
             </h3>
             
             <p style={{ fontSize: '0.92rem', color: 'var(--text-dark)', marginBottom: '0.75rem', lineHeight: '1.5' }}>
-              Remove <strong>{userData.name}</strong> from your organization?
+              Are you sure you want to permanently delete <strong>{userData.name}</strong>'s account?
             </p>
 
-            <div style={{ backgroundColor: '#f8fafc', border: '1px solid var(--border-color)', padding: '0.85rem 1rem', borderRadius: '6px', fontSize: '0.85rem', color: 'var(--text-light)', marginBottom: '1.5rem' }}>
-              The account will lose access immediately, while historical training records and course references will be preserved for compliance.
+            <div style={{ backgroundColor: '#fff2f0', border: '1px solid #ffccc7', padding: '0.85rem 1rem', borderRadius: '6px', fontSize: '0.85rem', color: '#a8071a', marginBottom: '1.5rem' }}>
+              This permanently removes the user's account and profile from Capacity Connect. This action cannot be undone.
             </div>
 
             {actionError && (
@@ -367,8 +367,8 @@ const UserDetails = () => {
               <button className="btn btn-outline" onClick={() => setShowDeleteModal(false)} disabled={actionLoading}>
                 Cancel
               </button>
-              <button className="btn btn-primary" style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleDelete} disabled={actionLoading}>
-                {actionLoading ? 'Removing...' : 'Confirm Remove'}
+              <button className="btn btn-danger" onClick={handleDelete} disabled={actionLoading}>
+                {actionLoading ? 'Deleting...' : 'Delete Account Permanently'}
               </button>
             </div>
           </div>

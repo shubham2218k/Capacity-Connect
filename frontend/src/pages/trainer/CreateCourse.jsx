@@ -8,6 +8,7 @@ const CreateCourse = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -72,33 +73,53 @@ const CreateCourse = () => {
     setStep(1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    
-    const payload = {
-      title: formData.title,
-      category: formData.category,
-      description: formData.shortDescription || 'A new capacity building course.',
-      detailedDescription: formData.detailedDescription,
-      difficulty: formData.difficulty,
-      duration: formData.duration || 'Not specified',
-      objectives: objectives.filter(o => o.trim() !== ''),
-      skills: skills
-    };
+    setError(null);
 
-    api.post('/courses', payload)
-      .then(response => {
-        if (response.success) {
-          navigate('/trainer/courses');
-        } else {
-          console.error("Course creation failed", response);
-          setIsSubmitting(false);
-        }
-      })
-      .catch(err => {
-        console.error(err);
+    const validObjectives = objectives.filter(o => o.trim() !== '');
+
+    try {
+      let response;
+      if (formData.thumbnail instanceof File) {
+        const fd = new FormData();
+        fd.append('title', formData.title);
+        fd.append('category', formData.category);
+        fd.append('shortDescription', formData.shortDescription || '');
+        fd.append('description', formData.detailedDescription || '');
+        fd.append('difficulty', formData.difficulty || 'Beginner');
+        fd.append('estimatedDuration', formData.duration || '');
+        validObjectives.forEach(o => fd.append('learningObjectives', o));
+        skills.forEach(s => fd.append('skills', s));
+        fd.append('thumbnail', formData.thumbnail);
+
+        response = await api.postFormData('/courses', fd);
+      } else {
+        const payload = {
+          title: formData.title,
+          category: formData.category,
+          shortDescription: formData.shortDescription || '',
+          description: formData.detailedDescription || '',
+          difficulty: formData.difficulty || 'Beginner',
+          estimatedDuration: formData.duration || '',
+          learningObjectives: validObjectives,
+          skills: skills
+        };
+        response = await api.post('/courses', payload);
+      }
+
+      if (response.success && response.data) {
+        const courseId = response.data._id || response.data.id;
+        navigate(`/trainer/courses/${courseId}`);
+      } else {
+        setError(response.message || 'Course creation failed.');
         setIsSubmitting(false);
-      });
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Unable to create course.');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -144,6 +165,12 @@ const CreateCourse = () => {
           </span>
         </div>
       </div>
+
+      {error && (
+        <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: 500 }}>
+          {error}
+        </div>
+      )}
 
       <div className="card" style={{ padding: '2.5rem' }}>
         
@@ -372,7 +399,7 @@ const CreateCourse = () => {
                 style={{ padding: '0.75rem 2.5rem' }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : 'Save as Draft & Continue'}
+                {isSubmitting ? 'Creating Course...' : 'Save Draft & Build Curriculum'}
               </button>
             </div>
           </div>

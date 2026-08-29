@@ -23,6 +23,7 @@ router.patch('/:id/modules/:moduleId', authorizeRoles('Trainer'), courseControll
 router.delete('/:id/modules/:moduleId', authorizeRoles('Trainer'), courseController.deleteModule);
 
 // Lessons / Materials
+router.get('/:id/modules/:moduleId/lessons/:lessonId/material', courseController.getLessonMaterial);
 router.post('/:id/modules/:moduleId/lessons', authorizeRoles('Trainer'), uploadMaterial.single('file'), courseController.addLesson);
 router.patch('/:id/modules/:moduleId/lessons/:lessonId', authorizeRoles('Trainer'), uploadMaterial.single('file'), courseController.updateLesson);
 router.delete('/:id/modules/:moduleId/lessons/:lessonId', authorizeRoles('Trainer'), courseController.deleteLesson);

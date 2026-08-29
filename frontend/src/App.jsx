@@ -15,6 +15,7 @@ import MCQExperience from './pages/MCQExperience';
 import Certificates from './pages/Certificates';
 import Profile from './pages/Profile';
 import TrainerApplication from './pages/TrainerApplication';
+import TrainerApplicationStatus from './pages/trainer/TrainerApplicationStatus';
 import AdminRegister from './pages/admin/AdminRegister';
 
 import TrainerLayout from './layouts/TrainerLayout';
@@ -38,6 +39,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import UserDetails from './pages/admin/UserDetails';
 import TrainerApprovals from './pages/admin/TrainerApprovals';
+import TrainerInspection from './pages/admin/TrainerInspection';
 import AdminCourses from './pages/admin/AdminCourses';
 import AdminEnrollments from './pages/admin/AdminEnrollments';
 import AdminAssessments from './pages/admin/AdminAssessments';
@@ -58,6 +60,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/trainer/apply" element={<TrainerApplication />} />
+          <Route path="/trainer/application-status" element={<TrainerApplicationStatus />} />
           <Route path="/admin/register" element={<AdminRegister />} />
           
           <Route path="/trainee" element={<TraineeLayout />}>
@@ -97,7 +100,9 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="users/:id" element={<UserDetails />} />
             <Route path="trainer-approvals" element={<TrainerApprovals />} />
+            <Route path="trainer-approvals/:id" element={<TrainerInspection />} />
             <Route path="courses" element={<AdminCourses />} />
+            <Route path="courses/:id" element={<CourseDetails />} />
             <Route path="enrollments" element={<AdminEnrollments />} />
             <Route path="assessments" element={<AdminAssessments />} />
             <Route path="certifications" element={<AdminCertifications />} />

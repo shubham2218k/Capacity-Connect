@@ -4,21 +4,38 @@ import CourseCard from '../components/CourseCard';
 import { BookOpen, Award, Clock, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getNotificationsForUser } from '../services/announcementService';
+import { fetchAnnouncements } from '../services/announcementService';
+
+const idOf = (item) => item?._id || item?.id;
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [, setTick] = useState(0);
+  const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => {
-    const handleUpdate = () => setTick(t => t + 1);
-    window.addEventListener('announcement_updated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-    return () => {
-      window.removeEventListener('announcement_updated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
+    const loadData = async () => {
+      if (!user) {
+        setAnnouncements([]);
+        return;
+      }
+      try {
+        const data = await fetchAnnouncements(user);
+        setAnnouncements(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load announcements:', err);
+        setAnnouncements([]);
+      }
     };
-  }, []);
+
+    loadData();
+
+    window.addEventListener('announcement_updated', loadData);
+    window.addEventListener('storage', loadData);
+    return () => {
+      window.removeEventListener('announcement_updated', loadData);
+      window.removeEventListener('storage', loadData);
+    };
+  }, [user]);
 
   // Mock enrolled courses (first two from our mock data)
   const enrolledCourses = [
@@ -162,21 +179,17 @@ const Dashboard = () => {
           <section>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.25rem' }}>Announcements</h2>
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {(() => {
-                const userNotices = getNotificationsForUser(user);
-                
-                if (userNotices.length === 0) {
-                  return <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>No active announcements for your workspace.</p>;
-                }
-
-                return userNotices.slice(0, 3).map((notice, i) => (
-                  <div key={notice.id || i} style={{ borderLeft: notice.priority === 'Important' ? '3px solid var(--danger)' : '3px solid var(--secondary)', paddingLeft: '1rem' }}>
+              {announcements.length === 0 ? (
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>No active announcements for your workspace.</p>
+              ) : (
+                announcements.slice(0, 3).map((notice, i) => (
+                  <div key={idOf(notice) || i} style={{ borderLeft: notice.priority === 'Important' ? '3px solid var(--danger)' : '3px solid var(--secondary)', paddingLeft: '1rem' }}>
                     <h4 style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-dark)' }}>{notice.title}</h4>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem', lineHeight: 1.4 }}>{notice.message || notice.content}</p>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem' }}>{notice.date || 'Recent'}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', display: 'block', marginTop: '0.25rem' }}>{notice.date || (notice.createdAt ? notice.createdAt.split('T')[0] : 'Recent')}</span>
                   </div>
-                ));
-              })()}
+                ))
+              )}
             </div>
           </section>
 

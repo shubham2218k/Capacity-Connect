@@ -4,12 +4,33 @@ const path = require('path');
 
 // Helper to check organization match
 const verifyOrg = (user, course) => {
-  return String(user.organizationId) === String(course.organization);
+  const orgId = course.organization && course.organization._id ? course.organization._id : course.organization;
+  return String(user.organizationId) === String(orgId);
 };
 
 // Helper to check course ownership
 const verifyOwner = (user, course) => {
-  return String(user._id) === String(course.trainer);
+  const trainerId = course.trainer && course.trainer._id ? course.trainer._id : course.trainer;
+  return String(user._id) === String(trainerId);
+};
+
+// Helper to safely delete file from disk if it exists
+const deleteFileIfExists = (fileUrl) => {
+  if (!fileUrl) return;
+  try {
+    const filename = path.basename(fileUrl);
+    let filePath;
+    if (fileUrl.includes('thumbnails')) {
+      filePath = path.join(__dirname, '../../uploads/thumbnails', filename);
+    } else {
+      filePath = path.join(__dirname, '../../uploads/course-materials', filename);
+    }
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (e) {
+    console.error('Failed to cleanup file:', fileUrl, e.message);
+  }
 };
 
 // POST /api/courses
@@ -135,6 +156,11 @@ exports.getCourseById = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'This course is not available.' });
     }
 
+    // Trainer access rule: owner can view any status, non-owner can view published only
+    if (req.user.role === 'Trainer' && !verifyOwner(req.user, course) && course.status !== 'published') {
+      return res.status(403).json({ success: false, message: "Not authorized to view another trainer's draft or archived course." });
+    }
+
     return res.json({
       success: true,
       data: course
@@ -173,6 +199,9 @@ exports.updateCourse = async (req, res, next) => {
     });
 
     if (req.file) {
+      if (course.thumbnail && course.thumbnail.url) {
+        deleteFileIfExists(course.thumbnail.url);
+      }
       course.thumbnail = {
         url: `/uploads/thumbnails/${req.file.filename}`,
         filename: req.file.filename
@@ -278,10 +307,7 @@ exports.deleteModule = async (req, res, next) => {
     if (mod.lessons && mod.lessons.length > 0) {
       mod.lessons.forEach(lesson => {
         if (lesson.fileUrl) {
-          const filePath = path.join(__dirname, '../../', lesson.fileUrl);
-          if (fs.existsSync(filePath)) {
-            try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to unlink file:', e); }
-          }
+          deleteFileIfExists(lesson.fileUrl);
         }
       });
     }
@@ -359,8 +385,22 @@ exports.addLesson = async (req, res, next) => {
     }
 
     const { title, description, type, duration, externalUrl } = req.body;
-    if (!title) {
+    if (!title || !title.trim()) {
+      if (req.file) deleteFileIfExists(`/uploads/course-materials/${req.file.filename}`);
       return res.status(400).json({ success: false, message: 'Material title is required.' });
+    }
+
+    const lessonType = type || (req.file ? (req.file.mimetype.startsWith('video/') ? 'video' : 'pdf') : 'link');
+
+    if (lessonType === 'link') {
+      if (!externalUrl || !externalUrl.trim()) {
+        if (req.file) deleteFileIfExists(`/uploads/course-materials/${req.file.filename}`);
+        return res.status(400).json({ success: false, message: 'External URL is required for link resources.' });
+      }
+    } else {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: `File upload is required for ${lessonType} learning materials.` });
+      }
     }
 
     let fileUrl = '';
@@ -376,9 +416,9 @@ exports.addLesson = async (req, res, next) => {
     }
 
     const lessonData = {
-      title,
+      title: title.trim(),
       description: description || '',
-      type: type || (req.file ? (req.file.mimetype.startsWith('video/') ? 'video' : 'pdf') : 'link'),
+      type: lessonType,
       fileUrl,
       originalFilename,
       mimeType,
@@ -398,6 +438,7 @@ exports.addLesson = async (req, res, next) => {
       data: createdLesson
     });
   } catch (err) {
+    if (req.file) deleteFileIfExists(`/uploads/course-materials/${req.file.filename}`);
     next(err);
   }
 };
@@ -425,6 +466,20 @@ exports.updateLesson = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Lesson not found.' });
     }
 
+    const targetType = req.body.type !== undefined ? req.body.type : lesson.type;
+    const targetUrl = req.body.externalUrl !== undefined ? req.body.externalUrl : lesson.externalUrl;
+
+    if (targetType === 'link') {
+      if (!targetUrl || !targetUrl.trim()) {
+        if (req.file) deleteFileIfExists(`/uploads/course-materials/${req.file.filename}`);
+        return res.status(400).json({ success: false, message: 'External URL is required for link resources.' });
+      }
+    } else {
+      if (!req.file && !lesson.fileUrl) {
+        return res.status(400).json({ success: false, message: `File upload is required for ${targetType} learning materials.` });
+      }
+    }
+
     if (req.body.title !== undefined) lesson.title = req.body.title;
     if (req.body.description !== undefined) lesson.description = req.body.description;
     if (req.body.duration !== undefined) lesson.duration = req.body.duration;
@@ -434,10 +489,7 @@ exports.updateLesson = async (req, res, next) => {
     if (req.file) {
       // Clean up previous file if any
       if (lesson.fileUrl) {
-        const oldPath = path.join(__dirname, '../../', lesson.fileUrl);
-        if (fs.existsSync(oldPath)) {
-          try { fs.unlinkSync(oldPath); } catch (e) {}
-        }
+        deleteFileIfExists(lesson.fileUrl);
       }
       lesson.fileUrl = `/uploads/course-materials/${req.file.filename}`;
       lesson.originalFilename = req.file.originalname;
@@ -453,6 +505,7 @@ exports.updateLesson = async (req, res, next) => {
       data: lesson
     });
   } catch (err) {
+    if (req.file) deleteFileIfExists(`/uploads/course-materials/${req.file.filename}`);
     next(err);
   }
 };
@@ -481,10 +534,7 @@ exports.deleteLesson = async (req, res, next) => {
     }
 
     if (lesson.fileUrl) {
-      const filePath = path.join(__dirname, '../../', lesson.fileUrl);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch (e) { console.error('Failed to delete file:', e); }
-      }
+      deleteFileIfExists(lesson.fileUrl);
     }
 
     mod.lessons.pull(req.params.lessonId);
@@ -522,10 +572,7 @@ exports.uploadThumbnail = async (req, res, next) => {
 
     // Clean up old thumbnail
     if (course.thumbnail && course.thumbnail.url) {
-      const oldPath = path.join(__dirname, '../../', course.thumbnail.url);
-      if (fs.existsSync(oldPath)) {
-        try { fs.unlinkSync(oldPath); } catch (e) {}
-      }
+      deleteFileIfExists(course.thumbnail.url);
     }
 
     course.thumbnail = {
@@ -570,8 +617,23 @@ exports.publishCourse = async (req, res, next) => {
     if (!course.skills || course.skills.length === 0) missing.push('At least 1 Skill/Competency');
     if (!course.modules || course.modules.length === 0) missing.push('At least 1 Module');
 
-    const totalLessons = course.modules ? course.modules.reduce((sum, m) => sum + (m.lessons ? m.lessons.length : 0), 0) : 0;
-    if (totalLessons === 0) missing.push('At least 1 Learning Material overall');
+    // Count VALID learning materials (either valid link or non-empty fileUrl)
+    let validMaterialsCount = 0;
+    if (course.modules) {
+      course.modules.forEach(mod => {
+        if (mod.lessons) {
+          mod.lessons.forEach(lesson => {
+            if (lesson.type === 'link') {
+              if (lesson.externalUrl && lesson.externalUrl.trim() !== '') validMaterialsCount++;
+            } else {
+              if (lesson.fileUrl && lesson.fileUrl.trim() !== '') validMaterialsCount++;
+            }
+          });
+        }
+      });
+    }
+
+    if (validMaterialsCount === 0) missing.push('At least 1 valid Learning Material (file or link)');
 
     if (missing.length > 0) {
       return res.status(400).json({
@@ -619,6 +681,55 @@ exports.archiveCourse = async (req, res, next) => {
       message: 'Course archived.',
       data: course
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/courses/:id/modules/:moduleId/lessons/:lessonId/material
+exports.getLessonMaterial = async (req, res, next) => {
+  try {
+    const course = await Course.findById(req.params.id);
+
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found.' });
+    }
+
+    if (!verifyOrg(req.user, course)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Course belongs to another organization.' });
+    }
+
+    if (req.user.role === 'Trainee' && course.status !== 'published') {
+      return res.status(403).json({ success: false, message: 'Material not available.' });
+    }
+
+    if (req.user.role === 'Trainer' && !verifyOwner(req.user, course) && course.status !== 'published') {
+      return res.status(403).json({ success: false, message: 'Material not available.' });
+    }
+
+    const mod = course.modules.id(req.params.moduleId);
+    if (!mod) {
+      return res.status(404).json({ success: false, message: 'Module not found.' });
+    }
+
+    const lesson = mod.lessons.id(req.params.lessonId);
+    if (!lesson || !lesson.fileUrl) {
+      return res.status(404).json({ success: false, message: 'Material file not found.' });
+    }
+
+    const filename = path.basename(lesson.fileUrl);
+    const filePath = path.join(__dirname, '../../uploads/course-materials', filename);
+
+    if (!fs.existsSync(filePath)) {
+      console.error(`getLessonMaterial file not found at path: ${filePath}`);
+      return res.status(404).json({ success: false, message: 'Material file missing from storage.' });
+    }
+
+    if (lesson.mimeType) {
+      res.setHeader('Content-Type', lesson.mimeType);
+    }
+
+    return res.sendFile(filePath);
   } catch (err) {
     next(err);
   }

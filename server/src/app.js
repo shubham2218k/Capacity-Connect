@@ -6,6 +6,8 @@ const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const resourceRoutes = require('./routes/resourceRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
 
 const app = express();
 
@@ -29,8 +31,8 @@ app.use(
 
 app.use(express.json());
 
-// Serve static uploads (course materials and thumbnails)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve static thumbnails publicly (learning materials served via protected API endpoints)
+app.use('/uploads/thumbnails', express.static(path.join(__dirname, '../uploads/thumbnails')));
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Capacity Connect API running' });
@@ -39,6 +41,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.method} ${req.originalUrl} not found.` });

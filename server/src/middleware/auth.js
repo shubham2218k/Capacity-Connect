@@ -13,11 +13,15 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
 
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Not authorized, user no longer exists.' });
+    if (!user || user.isDeleted) {
+      return res.status(401).json({ success: false, message: 'Not authorized, user account has been removed.' });
     }
 
-    if (user.status === 'suspended' || user.status === 'rejected') {
+    if (user.status === 'suspended') {
+      return res.status(403).json({ success: false, message: 'Your account has been suspended by your organization administrator.' });
+    }
+
+    if (user.status === 'rejected') {
       return res.status(403).json({ success: false, message: 'This account is not active.' });
     }
 

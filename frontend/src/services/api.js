@@ -12,11 +12,30 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const REQUEST_TIMEOUT = 8000;
 
-// Only these endpoints are served by the real backend. Everything else
-// (courses, assessments, certificates, ...) keeps running on local data.
-const BACKEND_PREFIXES = ['/health', '/auth/', '/admin/trainer-applications', '/courses'];
+// ── Demo accounts ─────────────────────────────────────────────────────────────
+// These two email addresses are hardcoded demo/walkthrough accounts.
+// They are NOT stored in MongoDB and always use the local mock fallback.
+const DEMO_EMAILS = [
+  'admin@capacityconnect.in',
+  'trainer@capacityconnect.in'
+];
 
-const usesBackend = (endpoint) => BACKEND_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
+// ── Core backend prefixes ──────────────────────────────────────────────────────
+// Requests to these endpoints MUST always reach the real Express/MongoDB backend
+// when the user is authenticated with a real JWT (not a demo token).
+// A network error on these will surface as a user-visible error — never a silent
+// local fallback — to keep MongoDB as the true source of truth.
+const CORE_PREFIXES = [
+  '/health',
+  '/auth/',
+  '/admin/',
+  '/courses',
+  '/resources',
+  '/announcements'
+];
+
+const isCoreEndpoint = (endpoint) =>
+  CORE_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
 
 const safeJSONParse = (str, fallback) => {
   try {
@@ -225,7 +244,14 @@ const getLocalData = (endpoint, method, body) => {
   }
 
   if (endpoint.startsWith('/auth/trainer-apply') && method === 'POST') {
-    const key = String(body?.trainerAccessKey || body?.accessKey || '').trim().toUpperCase();
+    // body can be a plain JSON object OR a FormData (multipart file upload).
+    // FormData fields are NOT accessible as regular object properties, so we
+    // must extract them explicitly.
+    const data = (body instanceof FormData)
+      ? Object.fromEntries([...body.entries()].filter(([, v]) => typeof v === 'string'))
+      : (body || {});
+
+    const key = String(data.trainerAccessKey || data.accessKey || '').trim().toUpperCase();
     const org = orgs.find(o => o.trainerKey === key);
     if (!org) {
       const crossed = orgs.find(o => o.traineeKey === key);
@@ -233,23 +259,29 @@ const getLocalData = (endpoint, method, body) => {
         ? "That is a Trainee access key. Please use your organization's Trainer access key."
         : 'Invalid organization access key.' } };
     }
-    if (users.some(u => u.email === body?.email)) {
+    if (users.some(u => u.email === data.email)) {
       return { status: 409, ok: false, data: { message: 'Email already registered.' } };
     }
 
+    // expertise may arrive as a comma-separated string from FormData
+    const rawExpertise = data.expertise || '';
+    const expertise = rawExpertise
+      ? rawExpertise.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
     const newUser = {
       _id: 'tnr' + Date.now(),
-      name: body?.name,
-      email: body?.email,
-      password: body?.password,
-      phone: body?.phone,
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      phone: data.phone,
       role: 'Trainer',
       status: 'pending', // Awaiting Admin approval
-      department: body?.department,
-      designation: body?.designation,
-      qualification: body?.qualification,
-      expertise: body?.expertise || [],
-      experience: body?.experience,
+      department: data.department,
+      designation: data.designation,
+      qualification: data.qualification,
+      expertise,
+      experience: data.experience,
       organizationId: org.id,
       organizationName: org.organizationName,
       createdAt: new Date().toISOString()
@@ -272,29 +304,107 @@ const getLocalData = (endpoint, method, body) => {
     const orgId = admin?.organizationId || null;
     const orgName = admin?.organizationName || 'Demo Organization';
 
-    const approveMatch = endpoint.match(/^\/admin\/trainer-applications\/([^/]+)\/approve/);
-    const rejectMatch = endpoint.match(/^\/admin\/trainer-applications\/([^/]+)\/reject/);
+    const approveMatch     = endpoint.match(/^\/admin\/trainer-applications\/([^/]+)\/approve/);
+    const rejectMatch      = endpoint.match(/^\/admin\/trainer-applications\/([^/]+)\/reject/);
+    const checklistMatch   = endpoint.match(/^\/admin\/trainer-applications\/([^/]+)\/review-checklist/);
+    const changesMatch     = endpoint.match(/^\/admin\/trainer-applications\/([^/]+)\/request-changes/);
+    const singleDetailMatch= endpoint.match(/^\/admin\/trainer-applications\/([^/]+)$/);
 
+    // ── APPROVE ────────────────────────────────────────────────────────────
     if (approveMatch && method === 'PATCH') {
       const id = approveMatch[1];
-      const index = users.findIndex(u => String(u._id) === id);
+      const index = users.findIndex(u => String(u._id) === id || String(u.id) === id);
       if (index === -1) return { status: 404, ok: false, data: { message: 'Trainer application not found.' } };
       users[index] = { ...users[index], status: 'active', rejectionReason: '' };
       setDB('mock_users', users);
       return { status: 200, ok: true, data: { success: true, message: `${users[index].name} has been approved.`, data: users[index] } };
     }
 
+    // ── REJECT ─────────────────────────────────────────────────────────────
     if (rejectMatch && method === 'PATCH') {
       const id = rejectMatch[1];
       const reason = (body?.reason || '').trim();
       if (!reason) return { status: 400, ok: false, data: { message: 'A rejection reason is required.' } };
-      const index = users.findIndex(u => String(u._id) === id);
+      const index = users.findIndex(u => String(u._id) === id || String(u.id) === id);
       if (index === -1) return { status: 404, ok: false, data: { message: 'Trainer application not found.' } };
       users[index] = { ...users[index], status: 'rejected', rejectionReason: reason };
       setDB('mock_users', users);
       return { status: 200, ok: true, data: { success: true, message: `${users[index].name}'s application was rejected.`, data: users[index] } };
     }
 
+    // ── SAVE REVIEW CHECKLIST ──────────────────────────────────────────────
+    if (checklistMatch && method === 'PATCH') {
+      const id = checklistMatch[1];
+      const index = users.findIndex(u => String(u._id) === id || String(u.id) === id);
+      if (index === -1) return { status: 404, ok: false, data: { message: 'Trainer not found.' } };
+      users[index] = {
+        ...users[index],
+        trainerReview: {
+          ...(users[index].trainerReview || {}),
+          organizationVerified: Boolean(body?.organizationVerified),
+          profileComplete: Boolean(body?.profileComplete),
+          qualificationReviewed: Boolean(body?.qualificationReviewed),
+          experienceReviewed: Boolean(body?.experienceReviewed),
+          expertiseReviewed: Boolean(body?.expertiseReviewed),
+          documentsReviewed: Boolean(body?.documentsReviewed),
+          verifiedExpertise: Array.isArray(body?.verifiedExpertise) ? body.verifiedExpertise : [],
+          adminRemarks: body?.adminRemarks || ''
+        }
+      };
+      setDB('mock_users', users);
+      return { status: 200, ok: true, data: { success: true, message: 'Checklist saved.' } };
+    }
+
+    // ── REQUEST CHANGES ────────────────────────────────────────────────────
+    if (changesMatch && method === 'PATCH') {
+      const id = changesMatch[1];
+      const reason = (body?.reason || '').trim();
+      if (!reason) return { status: 400, ok: false, data: { message: 'A reason is required.' } };
+      const index = users.findIndex(u => String(u._id) === id || String(u.id) === id);
+      if (index === -1) return { status: 404, ok: false, data: { message: 'Trainer not found.' } };
+      users[index] = { ...users[index], status: 'changes_requested', changesRequestedReason: reason };
+      setDB('mock_users', users);
+      return { status: 200, ok: true, data: { success: true, message: 'Changes requested from trainer.' } };
+    }
+
+    // ── SINGLE DETAIL GET ──────────────────────────────────────────────────
+    if (singleDetailMatch && method === 'GET') {
+      // Seed demo apps so the detail can always be reached
+      if (!localStorage.getItem('mock_demo_apps_seeded') && !users.some(u => u.role === 'Trainer')) {
+        users.push(...demoTrainerApplications(orgId, orgName));
+        setDB('mock_users', users);
+        localStorage.setItem('mock_demo_apps_seeded', '1');
+      }
+
+      const targetId = singleDetailMatch[1];
+      const found = users.find(u => String(u._id) === targetId || String(u.id) === targetId);
+      if (!found) return { status: 404, ok: false, data: { message: 'Trainer application not found.' } };
+
+      // Compute a simple completeness score (0–100) for the badge
+      const fields = ['name', 'email', 'phone', 'department', 'designation', 'qualification', 'experience'];
+      const filled = fields.filter(f => found[f] && String(found[f]).trim() !== '').length;
+      const hasExpertise = Array.isArray(found.expertise) && found.expertise.length > 0;
+      const completenessScore = Math.round(((filled + (hasExpertise ? 1 : 0)) / (fields.length + 1)) * 100);
+
+      const { password, ...rest } = found;
+      return {
+        status: 200,
+        ok: true,
+        data: {
+          success: true,
+          data: {
+            ...rest,
+            id: found._id,
+            appliedOn: found.createdAt,
+            trainerReview: found.trainerReview || {},
+            trainerDocuments: found.trainerDocuments || [],
+            completenessScore
+          }
+        }
+      };
+    }
+
+    // ── LIST GET ───────────────────────────────────────────────────────────
     if (method === 'GET') {
       // Seed a few demo applications once, so the screen is not empty during a walkthrough.
       if (!localStorage.getItem('mock_demo_apps_seeded') && !users.some(u => u.role === 'Trainer' && isPending(u.status))) {
@@ -379,7 +489,33 @@ const getLocalData = (endpoint, method, body) => {
 
   // --- Admin Data ---
   if (endpoint.includes('/users') || endpoint.includes('/admin/')) {
-    return { status: 200, ok: true, data: { success: true, data: [] } };
+    const admin = getStoredUser();
+    const orgId = admin?.organizationId || null;
+    const users = getDB('mock_users', []);
+    const orgUsers = users.filter((u) => (!orgId || String(u.organizationId) === String(orgId)) && !u.isDeleted);
+
+    if (endpoint.startsWith('/admin/users/')) {
+      const parts = endpoint.split('/');
+      const targetId = parts[3];
+      const found = users.find((u) => String(u._id || u.id) === String(targetId));
+      if (found && !found.isDeleted) {
+        const { password, ...rest } = found;
+        return { status: 200, ok: true, data: { success: true, data: { ...rest, id: found._id || found.id } } };
+      }
+      return { status: 404, ok: false, data: { success: false, message: 'User not found.' } };
+    }
+
+    return {
+      status: 200,
+      ok: true,
+      data: {
+        success: true,
+        data: orgUsers.map((u) => {
+          const { password, ...rest } = u;
+          return { ...rest, id: u._id || u.id };
+        })
+      }
+    };
   }
 
   // --- Trainer Trainees & Feedback ---
@@ -390,6 +526,55 @@ const getLocalData = (endpoint, method, body) => {
     return { status: 200, ok: true, data: { success: true, data: mockTrainerFeedback } };
   }
 
+  // --- Admin: announcements (demo-mode only) -----------------------------------
+  // For real users this endpoint always goes to the backend.
+  // The local fallback below is ONLY reached by demo sessions.
+  if (endpoint.startsWith('/announcements')) {
+    const admin = getStoredUser();
+    const orgId = admin?.organizationId || 'demo-org';
+    const orgName = admin?.organizationName || 'Demo Organization';
+    const demoAnns = getDB('mock_announcements', [
+      { _id: 'ann_d1', id: 'ann_d1', organization: orgId, organizationName: orgName, createdByName: 'System Admin',
+        title: 'System Maintenance Notice', message: 'Capacity Connect will undergo scheduled maintenance this Sunday from 02:00–04:00 AM IST.',
+        audience: 'all', type: 'important', priority: 'Important', createdAt: new Date('2026-08-25T10:00:00Z').toISOString() },
+      { _id: 'ann_d2', id: 'ann_d2', organization: orgId, organizationName: orgName, createdByName: 'Admin',
+        title: 'New Course: Advanced GIS Mapping', message: 'A new course on Advanced GIS Mapping is now open for enrollment.',
+        audience: 'trainees', type: 'learning-content', priority: 'Normal', createdAt: new Date('2026-08-24T14:30:00Z').toISOString() },
+      { _id: 'ann_d3', id: 'ann_d3', organization: orgId, organizationName: orgName, createdByName: 'Admin',
+        title: 'Trainer Workshop', message: 'Mandatory workshop for Trainers on new assessment tools. Check email for meeting link.',
+        audience: 'trainers', type: 'announcement', priority: 'Normal', createdAt: new Date('2026-08-20T09:00:00Z').toISOString() }
+    ]);
+
+    if (method === 'GET') {
+      return { status: 200, ok: true, data: { success: true, data: demoAnns } };
+    }
+    if (method === 'POST') {
+      const a = { _id: 'ann_' + Date.now(), id: 'ann_' + Date.now(), organization: orgId, organizationName: orgName,
+        createdByName: admin?.name || 'Admin', title: body?.title || '', message: body?.message || '',
+        audience: body?.audience || 'all', type: body?.type || 'announcement', priority: body?.priority || 'Normal',
+        createdAt: new Date().toISOString() };
+      demoAnns.unshift(a);
+      setDB('mock_announcements', demoAnns);
+      return { status: 201, ok: true, data: { success: true, data: a } };
+    }
+    if (method === 'PATCH') {
+      const id = endpoint.split('/').pop();
+      const idx = demoAnns.findIndex(a => a._id === id || a.id === id);
+      if (idx !== -1) {
+        demoAnns[idx] = { ...demoAnns[idx], ...body, updatedAt: new Date().toISOString() };
+        setDB('mock_announcements', demoAnns);
+        return { status: 200, ok: true, data: { success: true, data: demoAnns[idx] } };
+      }
+      return { status: 404, ok: false, data: { message: 'Announcement not found.' } };
+    }
+    if (method === 'DELETE') {
+      const id = endpoint.split('/').pop();
+      const filtered = demoAnns.filter(a => a._id !== id && a.id !== id);
+      setDB('mock_announcements', filtered);
+      return { status: 200, ok: true, data: { success: true, message: 'Deleted.' } };
+    }
+  }
+
   // Fallback generic response (avoids crashes)
   return { status: 200, ok: true, data: { success: true, data: Array.isArray(body) ? [] : {} } };
 };
@@ -397,6 +582,7 @@ const getLocalData = (endpoint, method, body) => {
 const localRequest = async (endpoint, method, body) => {
   await new Promise((resolve) => setTimeout(resolve, 120));
   const result = getLocalData(endpoint, method, body);
+
 
   if (!result.ok) {
     const error = new Error(result.data?.message || 'Request failed');
@@ -455,28 +641,43 @@ const request = async (method, endpoint, body, isFormData = false) => {
     options.body = isFormData ? body : JSON.stringify(body);
   }
 
-  // Intercept demo logins so they always work (using local mock) even if the real backend is running
+  // ── DEMO MODE ──────────────────────────────────────────────────────────────
+  // The two hardcoded demo accounts always use local mock data for login,
+  // regardless of whether the backend is running.
   if (endpoint === '/auth/login' && method === 'POST') {
-    if (body?.email === 'admin@capacityconnect.in' || body?.email === 'trainer@capacityconnect.in') {
+    if (DEMO_EMAILS.includes(body?.email)) {
       return localRequest(endpoint, method, body);
     }
   }
 
-  const isLocalToken = token && String(token).startsWith('local-token-');
+  // An active demo session (token starts with 'local-token-') means the user
+  // logged in via a demo account or a locally-registered mock account.
+  // ALL their requests use the local mock fallback — they are not MongoDB users.
+  const isDemoSession = token && String(token).startsWith('local-token-');
+  if (isDemoSession) {
+    return localRequest(endpoint, method, body);
+  }
 
-  if (usesBackend(endpoint) && !isLocalToken) {
-    let response;
+  // ── REAL BACKEND MODE ────────────────────────────────────────────────────
+  // Core features MUST reach the real backend. We deliberately never fall back
+  // to local data here — doing so would silently create phantom records and
+  // break the MongoDB-as-source-of-truth guarantee.
+  if (isCoreEndpoint(endpoint)) {
     try {
-      response = await backendFetch(endpoint, options);
-    } catch (err) {
-      // fetch only throws when the request never reached the server
-      // (connection refused, DNS failure, timeout, offline browser).
-      noteOffline();
-      return localRequest(endpoint, method, body);
+      const response = await backendFetch(endpoint, options);
+      return handleResponse(response, endpoint);
+    } catch (networkErr) {
+      // Only AbortError / TypeError (network unreachable) land here.
+      // Real HTTP errors (400, 401, 403, 404, 500…) are handled in handleResponse.
+      throw new Error(
+        'Unable to connect to Capacity Connect server. ' +
+        'Please check that the backend is running and your internet connection is active.'
+      );
     }
-    return handleResponse(response, endpoint);
   }
 
+  // Non-core features (assessments, certificates, library, etc.) still use
+  // mock data — they have not been migrated to the backend yet.
   return localRequest(endpoint, method, body);
 };
 

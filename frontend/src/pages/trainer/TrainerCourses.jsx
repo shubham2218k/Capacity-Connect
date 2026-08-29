@@ -105,71 +105,72 @@ const TrainerCourses = () => {
         </div>
       ) : filteredCourses.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-          {filteredCourses.map(course => (
-            <div key={course._id || course.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              
-              {/* Thumbnail */}
-              <div style={{ position: 'relative', height: '160px', backgroundColor: 'var(--bg-color-alt)' }}>
-                {course.thumbnail ? (
-                  <img src={course.thumbnail} alt={course.title || 'Course'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-light)' }}>
-                    <BookOpen size={48} opacity={0.2} />
-                  </div>
-                )}
-                <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '0.5rem' }}>
-                  <span className={`badge ${(course.status || '').toLowerCase() === 'published' ? 'badge-success' : (course.status || '').toLowerCase() === 'draft' ? 'badge-warning' : 'badge-neutral'}`} style={{ textTransform: 'capitalize' }}>
-                    {course.status || 'Draft'}
-                  </span>
-                </div>
-              </div>
+          {filteredCourses.map(course => {
+            const rawThumb = typeof course.thumbnail === 'string' ? course.thumbnail : course.thumbnail?.url;
+            const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+            const thumbUrl = rawThumb ? (rawThumb.startsWith('http') ? rawThumb : `${baseUrl}${rawThumb.startsWith('/') ? '' : '/'}${rawThumb}`) : null;
+            const resourceCount = course.modules ? course.modules.reduce((sum, m) => sum + (m.lessons ? m.lessons.length : 0), 0) : (course.resources?.length || course.resources || 0);
 
-              {/* Content */}
-              <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>
-                  {course.category || 'Uncategorized'}
-                </span>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', lineHeight: 1.4 }}>
-                  {course.title || 'Untitled Course'}
-                </h3>
+            return (
+              <div key={course._id || course.id} className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 
-                {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <BookOpen size={16} /> {course.modules?.length || 0} Modules
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <FileText size={16} /> {course.resources?.length || course.resources || 0} Resources
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <Users size={16} /> {course.enrolledTrainees || 0} Trainees
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <CheckCircle size={16} /> {course.assessments?.length || course.assessments || 0} Quizzes
+                {/* Thumbnail */}
+                <div style={{ position: 'relative', height: '160px', backgroundColor: 'var(--bg-color-alt)' }}>
+                  {thumbUrl ? (
+                    <img src={thumbUrl} alt={course.title || 'Course'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-light)' }}>
+                      <BookOpen size={48} opacity={0.2} />
+                    </div>
+                  )}
+                  <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '0.5rem' }}>
+                    <span className={`badge ${(course.status || '').toLowerCase() === 'published' ? 'badge-success' : (course.status || '').toLowerCase() === 'draft' ? 'badge-warning' : 'badge-neutral'}`} style={{ textTransform: 'capitalize' }}>
+                      {course.status || 'Draft'}
+                    </span>
                   </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                    {course.updatedAt ? `Updated ${new Date(course.updatedAt).toLocaleDateString()}` : 'Recently updated'}
+                {/* Content */}
+                <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.5rem' }}>
+                    {course.category || 'Uncategorized'}
                   </span>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <Link to={`/trainer/courses/${course._id || course.id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
-                      Manage
-                    </Link>
-                    <div style={{ position: 'relative' }} className="menu-container">
-                      <button className="btn btn-ghost" style={{ padding: '0.4rem' }}>
-                        <MoreVertical size={18} />
-                      </button>
-                      {/* Dropdown would go here in full implementation */}
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', lineHeight: 1.4 }}>
+                    {course.title || 'Untitled Course'}
+                  </h3>
+                  
+                  {/* Stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      <BookOpen size={16} /> {course.modules?.length || 0} Modules
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      <FileText size={16} /> {resourceCount} Resources
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      <Users size={16} /> {course.enrolledTrainees || 0} Trainees
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      <CheckCircle size={16} /> {course.assessments?.length || course.assessments || 0} Quizzes
+                    </div>
+                  </div>
+
+                  {/* Footer Actions */}
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                      {course.updatedAt ? `Updated ${new Date(course.updatedAt).toLocaleDateString()}` : 'Recently updated'}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <Link to={`/trainer/courses/${course._id || course.id}`} className="btn btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
+                        Manage
+                      </Link>
                     </div>
                   </div>
                 </div>
-              </div>
 
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="card" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

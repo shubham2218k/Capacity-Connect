@@ -14,7 +14,7 @@ const REQUEST_TIMEOUT = 8000;
 
 // Only these endpoints are served by the real backend. Everything else
 // (courses, assessments, certificates, ...) keeps running on local data.
-const BACKEND_PREFIXES = ['/health', '/auth/', '/admin/trainer-applications'];
+const BACKEND_PREFIXES = ['/health', '/auth/', '/admin/trainer-applications', '/courses'];
 
 const usesBackend = (endpoint) => BACKEND_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
 
@@ -486,5 +486,6 @@ export const api = {
   patch: (endpoint, body) => request('PATCH', endpoint, body),
   put: (endpoint, body) => request('PUT', endpoint, body),
   delete: (endpoint) => request('DELETE', endpoint),
-  postFormData: (endpoint, formData) => request('POST', endpoint, formData, true)
+  postFormData: (endpoint, formData) => request('POST', endpoint, formData, true),
+  patchFormData: (endpoint, formData) => request('PATCH', endpoint, formData, true)
 };

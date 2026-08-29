@@ -180,9 +180,15 @@ const trainerApply = async (req, res) => {
     phone,
     department,
     designation,
+    employeeId,
     qualification,
+    highestQualification,
+    institution,
     expertise,
-    experience
+    experience,
+    experienceYears,
+    bio,
+    professionalBio
   } = req.body;
   const key = req.body.trainerAccessKey || req.body.accessKey;
 
@@ -214,6 +220,27 @@ const trainerApply = async (req, res) => {
     return res.status(409).json({ success: false, message: 'Email already registered.' });
   }
 
+  // Process uploaded documents if present
+  const trainerDocuments = [];
+  if (req.files) {
+    const filesArr = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+    filesArr.forEach(file => {
+      let docType = 'other';
+      if (file.fieldname.includes('qualification')) docType = 'qualification';
+      else if (file.fieldname.includes('experience')) docType = 'experience';
+      else if (file.fieldname.includes('identity')) docType = 'identity';
+
+      trainerDocuments.push({
+        type: docType,
+        originalFilename: file.originalname,
+        filename: file.filename,
+        fileUrl: `/uploads/trainer-documents/${file.filename}`,
+        mimeType: file.mimetype,
+        uploadedAt: new Date()
+      });
+    });
+  }
+
   const trainer = await User.create({
     name,
     email,
@@ -223,11 +250,36 @@ const trainerApply = async (req, res) => {
     status: 'pending',
     organizationId: organization._id,
     organizationName: organization.name,
-    department,
-    designation,
-    qualification,
-    expertise: Array.isArray(expertise) ? expertise : String(expertise || '').split(',').map((s) => s.trim()).filter(Boolean),
-    experience: experience ? String(experience) : ''
+    department: department || '',
+    designation: designation || '',
+    employeeId: employeeId || '',
+    qualification: qualification || highestQualification || '',
+    institution: institution || '',
+    professionalBio: professionalBio || bio || '',
+    expertise: Array.isArray(expertise)
+      ? expertise
+      : typeof expertise === 'string' && expertise.trim()
+        ? expertise.split(',').map((s) => s.trim()).filter(Boolean)
+        : [],
+    experience: experience || experienceYears || '',
+    trainerDocuments,
+    trainerReview: {
+      organizationVerified: true,
+      profileComplete: Boolean((name && email && phone && designation && (qualification || highestQualification))),
+      qualificationReviewed: false,
+      experienceReviewed: false,
+      expertiseReviewed: false,
+      documentsReviewed: false,
+      verifiedExpertise: [],
+      adminRemarks: ''
+    },
+    reviewHistory: [
+      {
+        action: 'submitted',
+        note: 'Trainer application submitted.',
+        timestamp: new Date()
+      }
+    ]
   });
 
   return res.status(201).json({
@@ -240,6 +292,105 @@ const trainerApply = async (req, res) => {
       role: trainer.role,
       status: trainer.status,
       organizationName: trainer.organizationName
+    }
+  });
+};
+
+// POST /api/auth/trainer-resubmit
+// Resubmits an application for a Trainer whose status is 'changes_requested'.
+const trainerResubmit = async (req, res) => {
+  const {
+    email,
+    password,
+    department,
+    designation,
+    employeeId,
+    qualification,
+    highestQualification,
+    institution,
+    expertise,
+    experience,
+    experienceYears,
+    bio,
+    professionalBio
+  } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password are required to verify your application identity.' });
+  }
+
+  const trainer = await User.findOne({ email: String(email).toLowerCase().trim(), role: 'Trainer' }).select('+password');
+  if (!trainer || !(await trainer.matchPassword(password))) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+  }
+
+  if (trainer.status !== 'changes_requested' && trainer.status !== 'pending') {
+    return res.status(400).json({ success: false, message: 'Application is not open for revision.' });
+  }
+
+  // Update profile fields
+  if (department !== undefined) trainer.department = department;
+  if (designation !== undefined) trainer.designation = designation;
+  if (employeeId !== undefined) trainer.employeeId = employeeId;
+  if (qualification !== undefined || highestQualification !== undefined) {
+    trainer.qualification = qualification || highestQualification;
+  }
+  if (institution !== undefined) trainer.institution = institution;
+  if (professionalBio !== undefined || bio !== undefined) {
+    trainer.professionalBio = professionalBio || bio;
+  }
+  if (experience !== undefined || experienceYears !== undefined) {
+    trainer.experience = experience || experienceYears;
+  }
+  if (expertise !== undefined) {
+    trainer.expertise = Array.isArray(expertise)
+      ? expertise
+      : typeof expertise === 'string' && expertise.trim()
+        ? expertise.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+  }
+
+  // Process any newly uploaded documents
+  if (req.files) {
+    const filesArr = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+    filesArr.forEach(file => {
+      let docType = 'other';
+      if (file.fieldname.includes('qualification')) docType = 'qualification';
+      else if (file.fieldname.includes('experience')) docType = 'experience';
+      else if (file.fieldname.includes('identity')) docType = 'identity';
+
+      trainer.trainerDocuments.push({
+        type: docType,
+        originalFilename: file.originalname,
+        filename: file.filename,
+        fileUrl: `/uploads/trainer-documents/${file.filename}`,
+        mimeType: file.mimetype,
+        uploadedAt: new Date()
+      });
+    });
+  }
+
+  trainer.status = 'pending';
+  trainer.changesRequestedReason = '';
+  if (trainer.trainerReview) {
+    trainer.trainerReview.documentsReviewed = false;
+  }
+  trainer.reviewHistory.push({
+    action: 'resubmitted',
+    note: 'Trainer corrected application and resubmitted for review.',
+    timestamp: new Date()
+  });
+
+  await trainer.save();
+
+  return res.json({
+    success: true,
+    message: 'Trainer application resubmitted successfully. Status is now pending review.',
+    data: {
+      _id: trainer._id,
+      name: trainer.name,
+      email: trainer.email,
+      status: trainer.status
     }
   });
 };
@@ -277,7 +428,7 @@ const login = async (req, res) => {
   // password has select:false on the model, so ask for it explicitly.
   const user = await User.findOne({ email: String(email).toLowerCase().trim() }).select('+password');
 
-  if (!user || !(await user.matchPassword(password))) {
+  if (!user || user.isDeleted || !(await user.matchPassword(password))) {
     return res.status(401).json({ success: false, message: 'Invalid email or password.' });
   }
 
@@ -305,20 +456,31 @@ const login = async (req, res) => {
   }
 
   if (user.role === 'Trainer' && user.status === 'pending') {
-    return res.status(403).json({ success: false, message: 'Your Trainer account is awaiting Admin approval.' });
+    return res.status(403).json({ success: false, status: 'pending', message: 'Your Trainer application is currently under review.' });
+  }
+
+  if (user.role === 'Trainer' && user.status === 'changes_requested') {
+    return res.status(403).json({
+      success: false,
+      status: 'changes_requested',
+      message: 'Changes have been requested for your Trainer application.',
+      changesRequestedReason: user.changesRequestedReason || '',
+      email: user.email
+    });
   }
 
   if (user.status === 'rejected') {
     return res.status(403).json({
       success: false,
+      status: 'rejected',
       message: user.role === 'Trainer'
-        ? 'Your Trainer application was rejected.'
+        ? (user.rejectionReason ? `Your Trainer application was rejected. Reason: ${user.rejectionReason}` : 'Your Trainer application was rejected.')
         : 'Your account was rejected.'
     });
   }
 
   if (user.status === 'suspended') {
-    return res.status(403).json({ success: false, message: 'Your account has been suspended.' });
+    return res.status(403).json({ success: false, message: 'Your account has been suspended by your organization administrator.' });
   }
 
   if (user.status !== 'active') {
@@ -354,4 +516,4 @@ const me = async (req, res) => {
   return res.json({ success: true, data: { ...authPayload(req.user, extra) } });
 };
 
-module.exports = { adminRegister, traineeRegister, trainerApply, validateKey, login, me };
+module.exports = { adminRegister, traineeRegister, trainerApply, trainerResubmit, validateKey, login, me };

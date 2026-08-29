@@ -283,7 +283,7 @@ const CreateCourse = () => {
                 >
                   <input 
                     type="file" 
-                    accept="image/*"
+                    accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10 }} 
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
@@ -293,7 +293,7 @@ const CreateCourse = () => {
                   />
                   <ImageIcon size={32} className="text-light" style={{ margin: '0 auto 1rem' }} />
                   <p style={{ fontWeight: 500, marginBottom: '0.25rem' }}>Click to upload or drag and drop</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>SVG, PNG, JPG or GIF (max. 2MB)</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>PNG, JPG, JPEG, WEBP or GIF (Max 5MB)</p>
                 </div>
               )}
             </div>

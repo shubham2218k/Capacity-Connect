@@ -122,7 +122,7 @@ const AdminCourses = () => {
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                          <Link to={`/trainee/courses/${courseId}`} className="btn btn-outline" style={{ padding: '0.35rem 0.7rem', fontSize: '0.85rem' }} title="Preview Course">
+                          <Link to={`/admin/courses/${courseId}`} className="btn btn-outline" style={{ padding: '0.35rem 0.7rem', fontSize: '0.85rem' }} title="Preview Course">
                             <Eye size={16} /> Preview
                           </Link>
                           {status !== 'archived' && (

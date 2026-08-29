@@ -3,10 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { 
-  getNotificationsForUser, 
+  fetchAnnouncements, 
   markAllAnnouncementsAsRead, 
   markAnnouncementAsRead 
 } from '../services/announcementService';
+
+const idOf = (item) => item?._id || item?.id;
 
 const Header = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
@@ -15,11 +17,17 @@ const Header = ({ toggleSidebar }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-  const loadNotifications = () => {
-    if (user) {
-      const userNotifs = getNotificationsForUser(user);
-      setNotifications(userNotifs);
-    } else {
+  const loadNotifications = async () => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+
+    try {
+      const data = await fetchAnnouncements(user);
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
       setNotifications([]);
     }
   };
@@ -48,16 +56,17 @@ const Header = ({ toggleSidebar }) => {
     navigate('/login');
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     if (!user) return;
-    markAllAnnouncementsAsRead(user);
-    loadNotifications();
+    markAllAnnouncementsAsRead(user, notifications);
+    await loadNotifications();
   };
 
-  const handleNotificationClick = (n) => {
-    if (!n.read && user) {
-      markAnnouncementAsRead(user, n.id);
-      loadNotifications();
+  const handleNotificationClick = async (n) => {
+    const id = idOf(n);
+    if (!n.read && user && id) {
+      markAnnouncementAsRead(user, id);
+      await loadNotifications();
     }
   };
 
@@ -174,7 +183,7 @@ const Header = ({ toggleSidebar }) => {
               <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
                 {notifications.length > 0 ? notifications.map(n => (
                   <div 
-                    key={n.id} 
+                    key={idOf(n)} 
                     onClick={() => handleNotificationClick(n)}
                     style={{ 
                       padding: '1rem', 

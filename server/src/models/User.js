@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['active', 'pending', 'rejected', 'suspended'],
+      enum: ['active', 'pending', 'changes_requested', 'rejected', 'suspended'],
       default: 'active'
     },
 
@@ -29,9 +29,52 @@ const userSchema = new mongoose.Schema(
     qualification: { type: String, trim: true, default: '' },
 
     // Trainer only
+    employeeId: { type: String, trim: true, default: '' },
+    institution: { type: String, trim: true, default: '' },
+    professionalBio: { type: String, trim: true, default: '' },
     expertise: { type: [String], default: [] },
     experience: { type: String, trim: true, default: '' },
-    rejectionReason: { type: String, trim: true, default: '' }
+
+    trainerDocuments: [
+      {
+        type: { type: String, enum: ['qualification', 'experience', 'identity', 'other'] },
+        originalFilename: { type: String, trim: true },
+        filename: { type: String, trim: true },
+        fileUrl: { type: String, trim: true },
+        mimeType: { type: String, trim: true },
+        uploadedAt: { type: Date, default: Date.now }
+      }
+    ],
+
+    changesRequestedReason: { type: String, trim: true, default: '' },
+    rejectionReason: { type: String, trim: true, default: '' },
+
+    trainerReview: {
+      organizationVerified: { type: Boolean, default: false },
+      profileComplete: { type: Boolean, default: false },
+      qualificationReviewed: { type: Boolean, default: false },
+      experienceReviewed: { type: Boolean, default: false },
+      expertiseReviewed: { type: Boolean, default: false },
+      documentsReviewed: { type: Boolean, default: false },
+      verifiedExpertise: { type: [String], default: [] },
+      adminRemarks: { type: String, trim: true, default: '' },
+      reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      reviewedAt: { type: Date }
+    },
+
+    reviewHistory: [
+      {
+        action: { type: String, enum: ['submitted', 'changes_requested', 'resubmitted', 'approved', 'rejected'] },
+        note: { type: String, trim: true, default: '' },
+        performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        timestamp: { type: Date, default: Date.now }
+      }
+    ],
+
+    // Soft delete
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
 );

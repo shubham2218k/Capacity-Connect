@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Plus, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  getAnnouncementsForAdmin, 
+  fetchAnnouncementsForAdmin, 
   createAnnouncement, 
   updateAnnouncement, 
   deleteAnnouncement,
@@ -10,12 +10,15 @@ import {
   normalizeAudience
 } from '../../services/announcementService';
 
+const idOf = (item) => item?._id || item?.id;
+
 const Announcements = () => {
   const { user } = useAuth();
   const [announcements, setAnnouncements] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingNotice, setEditingNotice] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -26,10 +29,15 @@ const Announcements = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
-  const loadAdminAnnouncements = () => {
-    if (user) {
-      const data = getAnnouncementsForAdmin(user);
-      setAnnouncements(data);
+  const loadAdminAnnouncements = async () => {
+    if (!user) return;
+    try {
+      setError('');
+      const data = await fetchAnnouncementsForAdmin(user);
+      setAnnouncements(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load announcements:', err);
+      setError(err?.message || 'Failed to load announcements.');
     }
   };
 
@@ -75,24 +83,35 @@ const Announcements = () => {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.message.trim()) return;
 
-    if (editingNotice) {
-      updateAnnouncement(user, editingNotice.id, formData);
-    } else {
-      createAnnouncement(user, formData);
+    try {
+      setError('');
+      if (editingNotice) {
+        await updateAnnouncement(user, idOf(editingNotice), formData);
+      } else {
+        await createAnnouncement(user, formData);
+      }
+      await loadAdminAnnouncements();
+      setShowModal(false);
+    } catch (err) {
+      console.error('Failed to save announcement:', err);
+      setError(err?.message || 'Failed to save announcement.');
     }
-
-    loadAdminAnnouncements();
-    setShowModal(false);
   };
 
-  const handleDelete = (id) => {
-    deleteAnnouncement(user, id);
-    loadAdminAnnouncements();
-    setDeleteConfirmId(null);
+  const handleDelete = async (id) => {
+    try {
+      setError('');
+      await deleteAnnouncement(user, id);
+      await loadAdminAnnouncements();
+      setDeleteConfirmId(null);
+    } catch (err) {
+      console.error('Failed to delete announcement:', err);
+      setError(err?.message || 'Failed to delete announcement.');
+    }
   };
 
   return (
@@ -111,11 +130,17 @@ const Announcements = () => {
         </button>
       </div>
 
+      {error && (
+        <div style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '0.85rem 1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          {error}
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {announcements.length > 0 ? (
           announcements.map(notice => (
             <div 
-              key={notice.id} 
+              key={idOf(notice)} 
               className="card" 
               style={{ 
                 padding: '1.5rem', 
@@ -146,7 +171,7 @@ const Announcements = () => {
                       <Edit2 size={16} />
                     </button>
                     <button 
-                      onClick={() => setDeleteConfirmId(notice.id)}
+                      onClick={() => setDeleteConfirmId(idOf(notice))}
                       style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.25rem' }} 
                       title="Delete Announcement"
                     >

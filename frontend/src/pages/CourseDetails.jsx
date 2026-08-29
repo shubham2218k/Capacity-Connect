@@ -1,15 +1,44 @@
-import { useParams, Link, useNavigate } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Clock, Book, Award, PlayCircle, FileText, File, Video, ArrowLeft, CheckCircle, Link as LinkIcon, User, AlertCircle } from 'lucide-react';
+import { Clock, Book, Award, PlayCircle, FileText, File, Video, ArrowLeft, CheckCircle, Link as LinkIcon, User, AlertCircle, Shield } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import ResourceViewer from '../components/ResourceViewer';
 
 const CourseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [enrolled, setEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const isAdminOrTrainer = user?.role === 'Admin' || user?.role === 'Trainer';
+
+  // Resource Viewer State
+  const [selectedViewerResource, setSelectedViewerResource] = useState(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const openResourceViewer = (mod, lesson) => {
+    setSelectedViewerResource({
+      id: lesson._id || lesson.id,
+      courseId: course._id || course.id,
+      courseTitle: course.title,
+      moduleId: mod._id || mod.id,
+      moduleTitle: mod.title,
+      title: lesson.title,
+      description: lesson.description || '',
+      type: lesson.type,
+      fileUrl: lesson.fileUrl || '',
+      externalUrl: lesson.externalUrl || '',
+      originalFilename: lesson.originalFilename || '',
+      fileSize: lesson.fileSize || 0,
+      duration: lesson.duration || '',
+      trainerName: course.trainer?.name || 'Trainer'
+    });
+    setIsViewerOpen(true);
+  };
 
   useEffect(() => {
     fetchCourseDetails();
@@ -23,13 +52,15 @@ const CourseDetails = () => {
       setCourse(courseData);
       setError(null);
 
-      // Check enrollment status
-      try {
-        const enrollRes = await api.get(`/courses/${id}/enrollment`);
-        if (enrollRes.success && enrollRes.data?.enrolled) {
-          setEnrolled(true);
-        }
-      } catch (e) {}
+      // Check enrollment status (Trainees only)
+      if (user?.role === 'Trainee') {
+        try {
+          const enrollRes = await api.get(`/courses/${id}/enrollment`);
+          if (enrollRes.success && enrollRes.data?.enrolled) {
+            setEnrolled(true);
+          }
+        } catch (e) {}
+      }
     } catch (err) {
       setError(err.message || 'Course not found or access denied.');
     } finally {
@@ -42,6 +73,14 @@ const CourseDetails = () => {
     if (path.startsWith('http')) return path;
     const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
     return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
+  const getLessonMaterialUrl = (courseId, modId, lesson) => {
+    if (!lesson) return '';
+    if (lesson.externalUrl) return lesson.externalUrl;
+    if (!lesson.fileUrl) return '';
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+    return `${baseUrl}/api/courses/${courseId}/modules/${modId}/lessons/${lesson._id || lesson.id}/material`;
   };
 
   const handleEnroll = async () => {
@@ -150,16 +189,36 @@ const CourseDetails = () => {
                     {mod.lessons && mod.lessons.length > 0 ? (
                       <div style={{ padding: '0.5rem 1.5rem' }}>
                         {mod.lessons.map((lesson, lIdx) => (
-                          <div key={lIdx} style={{ padding: '0.6rem 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: lIdx < mod.lessons.length - 1 ? '1px dashed var(--border-color)' : 'none' }}>
+                          <div 
+                            key={lIdx} 
+                            onClick={() => openResourceViewer(mod, lesson)}
+                            style={{ 
+                              padding: '0.65rem 0.5rem', 
+                              display: 'flex', 
+                              justify: 'space-between', 
+                              alignItems: 'center', 
+                              borderBottom: lIdx < mod.lessons.length - 1 ? '1px dashed var(--border-color)' : 'none',
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              transition: 'background-color 0.15s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                               <div style={{ color: 'var(--secondary)' }}>
                                 {lesson.type === 'video' ? <Video size={18} /> : lesson.type === 'link' ? <LinkIcon size={18} /> : <FileText size={18} />}
                               </div>
-                              <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{lesson.title}</span>
+                              <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--primary)' }}>{lesson.title}</span>
                             </div>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', textTransform: 'capitalize' }}>
-                              {lesson.type} {lesson.duration && `• ${lesson.duration}`}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-light)', textTransform: 'capitalize' }}>
+                                {lesson.type} {lesson.duration && `• ${lesson.duration}`}
+                              </span>
+                              <span className="btn btn-ghost" style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', color: 'var(--secondary)' }}>
+                                View
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -191,7 +250,11 @@ const CourseDetails = () => {
             )}
             
             <div style={{ padding: '1.5rem' }}>
-              {enrolled ? (
+              {isAdminOrTrainer ? (
+                <div style={{ backgroundColor: '#f0f9ff', color: '#0369a1', padding: '0.75rem', borderRadius: '6px', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                  <Shield size={18} /> {user.role} Catalog Preview
+                </div>
+              ) : enrolled ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ backgroundColor: '#ecfdf5', color: '#065f46', padding: '0.75rem', borderRadius: '6px', textAlign: 'center', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                     <CheckCircle size={18} /> You are enrolled
@@ -238,6 +301,12 @@ const CourseDetails = () => {
           </div>
         </div>
 
+        {/* Shared Resource Viewer */}
+        <ResourceViewer 
+          resource={selectedViewerResource} 
+          isOpen={isViewerOpen} 
+          onClose={() => setIsViewerOpen(false)} 
+        />
       </div>
     </div>
   );

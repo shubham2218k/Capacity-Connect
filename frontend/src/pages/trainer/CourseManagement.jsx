@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import ResourceViewer from '../../components/ResourceViewer';
 
 const CourseManagement = () => {
   const { id } = useParams();
@@ -62,6 +63,30 @@ const CourseManagement = () => {
   // Course Preview Modal State
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
+  // Resource Viewer State
+  const [selectedViewerResource, setSelectedViewerResource] = useState(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  const openResourceViewer = (mod, lesson) => {
+    setSelectedViewerResource({
+      id: lesson._id || lesson.id,
+      courseId: course._id || course.id,
+      courseTitle: course.title,
+      moduleId: mod._id || mod.id,
+      moduleTitle: mod.title,
+      title: lesson.title,
+      description: lesson.description || '',
+      type: lesson.type,
+      fileUrl: lesson.fileUrl || '',
+      externalUrl: lesson.externalUrl || '',
+      originalFilename: lesson.originalFilename || '',
+      fileSize: lesson.fileSize || 0,
+      duration: lesson.duration || '',
+      trainerName: course.trainer?.name || user?.name || 'Trainer'
+    });
+    setIsViewerOpen(true);
+  };
+
   useEffect(() => {
     fetchCourseData();
   }, [id]);
@@ -86,6 +111,13 @@ const CourseManagement = () => {
     if (path.startsWith('http')) return path;
     const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
     return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
+  const getLessonMaterialUrl = (modId, lessonId, fileUrl) => {
+    if (!fileUrl) return '';
+    if (fileUrl.startsWith('http')) return fileUrl;
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+    return `${baseUrl}/api/courses/${id}/modules/${modId}/lessons/${lessonId}/material`;
   };
 
   const tabs = ['Overview', 'Curriculum', 'Resources', 'Assessments', 'Trainees', 'Feedback'];
@@ -142,8 +174,8 @@ const CourseManagement = () => {
       { name: 'At least 1 Skill / Competency', pass: !!(course.skills?.length > 0) },
       { name: 'At least 1 Module', pass: !!(modules && modules.length > 0) },
       { 
-        name: 'At least 1 Learning Material overall', 
-        pass: modules ? modules.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) > 0 : false 
+        name: 'At least 1 valid Learning Material (file or link)', 
+        pass: modules ? modules.some(m => m.lessons?.some(l => (l.type === 'link' ? !!(l.externalUrl && l.externalUrl.trim()) : !!(l.fileUrl && l.fileUrl.trim())))) : false 
       }
     ];
 
@@ -607,11 +639,9 @@ const CourseManagement = () => {
                               </div>
 
                               <div style={{ display: 'flex', gap: '0.35rem' }}>
-                                {lesson.fileUrl && (
-                                  <a href={getMediaUrl(lesson.fileUrl)} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--primary)' }} title="View Material">
-                                    <Eye size={16} />
-                                  </a>
-                                )}
+                                <button onClick={() => openResourceViewer(mod, lesson)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--primary)' }} title="View Material">
+                                  <Eye size={16} />
+                                </button>
                                 {lesson.externalUrl && (
                                   <a href={lesson.externalUrl} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--primary)' }} title="Open External Link">
                                     <LinkIcon size={16} />
@@ -703,7 +733,7 @@ const CourseManagement = () => {
                           <td style={{ padding: '1rem', textAlign: 'right' }}>
                             <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                               {resItem.fileUrl && (
-                                <a href={getMediaUrl(resItem.fileUrl)} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
+                                <a href={getLessonMaterialUrl(resItem.moduleId, resId, resItem.fileUrl)} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
                                   View / Download
                                 </a>
                               )}
@@ -1027,7 +1057,7 @@ const CourseManagement = () => {
                       <input 
                         type="file" 
                         required={!editingLesson}
-                        accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4"
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,video/mp4"
                         style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10 }} 
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
@@ -1174,6 +1204,13 @@ const CourseManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Shared Resource Viewer */}
+      <ResourceViewer 
+        resource={selectedViewerResource} 
+        isOpen={isViewerOpen} 
+        onClose={() => setIsViewerOpen(false)} 
+      />
 
     </div>
   );

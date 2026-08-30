@@ -9,8 +9,16 @@ import {
   mockTrainerFeedback
 } from '../data/mockData';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const REQUEST_TIMEOUT = 8000;
+const DEFAULT_API_ORIGIN = 'https://capacity-connect-8dfa.onrender.com';
+
+const rawApiBase = import.meta.env.VITE_API_URL || DEFAULT_API_ORIGIN;
+
+const API_BASE_URL = `${rawApiBase
+  .trim()
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '')}/api`;
+
+const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 45000;
 
 // ── Demo accounts ─────────────────────────────────────────────────────────────
 // These two email addresses are hardcoded demo/walkthrough accounts.
@@ -40,7 +48,7 @@ const isCoreEndpoint = (endpoint) =>
 const safeJSONParse = (str, fallback) => {
   try {
     return JSON.parse(str) || fallback;
-  } catch (e) {
+  } catch {
     return fallback;
   }
 };
@@ -126,7 +134,8 @@ const getLocalData = (endpoint, method, body) => {
     users.push(newAdmin);
     setDB('mock_users', users);
 
-    const { password, ...safeAdmin } = newAdmin;
+    const safeAdmin = { ...newAdmin };
+    delete safeAdmin.password;
     return {
       status: 201,
       ok: true,
@@ -163,7 +172,8 @@ const getLocalData = (endpoint, method, body) => {
       }
 
       const org = orgs.find(o => o.id === user.organizationId);
-      const { password, ...safeUser } = user;
+      const safeUser = { ...user };
+      delete safeUser.password;
 
       if (user.role === 'Admin') {
         return {
@@ -239,7 +249,8 @@ const getLocalData = (endpoint, method, body) => {
     users.push(newUser);
     setDB('mock_users', users);
 
-    const { password, ...safeUser } = newUser;
+    const safeUser = { ...newUser };
+    delete safeUser.password;
     return { status: 201, ok: true, data: { success: true, data: { ...safeUser, token: `local-token-${newUser._id}` } } };
   }
 
@@ -386,7 +397,8 @@ const getLocalData = (endpoint, method, body) => {
       const hasExpertise = Array.isArray(found.expertise) && found.expertise.length > 0;
       const completenessScore = Math.round(((filled + (hasExpertise ? 1 : 0)) / (fields.length + 1)) * 100);
 
-      const { password, ...rest } = found;
+      const rest = { ...found };
+      delete rest.password;
       return {
         status: 200,
         ok: true,
@@ -417,7 +429,8 @@ const getLocalData = (endpoint, method, body) => {
         .filter(u => u.role === 'Trainer' && isPending(u.status))
         .filter(u => !orgId || !u.organizationId || String(u.organizationId) === String(orgId))
         .map(u => {
-          const { password, ...rest } = u;
+          const rest = { ...u };
+          delete rest.password;
           return { ...rest, id: u._id, appliedOn: u.createdAt };
         })
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
@@ -525,7 +538,8 @@ const getLocalData = (endpoint, method, body) => {
       const targetId = parts[3];
       const found = users.find((u) => String(u._id || u.id) === String(targetId));
       if (found && !found.isDeleted) {
-        const { password, ...rest } = found;
+        const rest = { ...found };
+        delete rest.password;
         return { status: 200, ok: true, data: { success: true, data: { ...rest, id: found._id || found.id } } };
       }
       return { status: 404, ok: false, data: { success: false, message: 'User not found.' } };
@@ -537,7 +551,8 @@ const getLocalData = (endpoint, method, body) => {
       data: {
         success: true,
         data: orgUsers.map((u) => {
-          const { password, ...rest } = u;
+          const rest = { ...u };
+          delete rest.password;
           return { ...rest, id: u._id || u.id };
         })
       }
@@ -609,22 +624,12 @@ const localRequest = async (endpoint, method, body) => {
   await new Promise((resolve) => setTimeout(resolve, 120));
   const result = getLocalData(endpoint, method, body);
 
-
   if (!result.ok) {
     const error = new Error(result.data?.message || 'Request failed');
     error.status = result.status;
     throw error;
   }
   return result.data;
-};
-
-let offlineNoticeLogged = false;
-
-const noteOffline = () => {
-  if (!offlineNoticeLogged) {
-    console.info('Backend unavailable, using local fallback.');
-    offlineNoticeLogged = true;
-  }
 };
 
 // Reads the response. HTTP errors are real answers from the server and are
@@ -648,9 +653,11 @@ const handleResponse = async (response, endpoint) => {
 
 const backendFetch = async (endpoint, options) => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    return await fetch(`${API_URL}${endpoint}`, { ...options, signal: controller.signal });
+    const normalizedPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const requestUrl = `${API_BASE_URL}${normalizedPath}`;
+    return await fetch(requestUrl, { ...options, signal: controller.signal });
   } finally {
     clearTimeout(timer);
   }
@@ -689,23 +696,43 @@ const request = async (method, endpoint, body, isFormData = false) => {
   // to local data here — doing so would silently create phantom records and
   // break the MongoDB-as-source-of-truth guarantee.
   if (isCoreEndpoint(endpoint)) {
+    let response;
     try {
-      const response = await backendFetch(endpoint, options);
-      return handleResponse(response, endpoint);
+      response = await backendFetch(endpoint, options);
     } catch (networkErr) {
-      // Only AbortError / TypeError (network unreachable) land here.
-      // Real HTTP errors (400, 401, 403, 404, 500…) are handled in handleResponse.
+      if (networkErr?.name === 'AbortError') {
+        throw new Error(
+          'The server is taking longer than expected to respond. Please try again.',
+          { cause: networkErr }
+        );
+      }
       throw new Error(
-        'Unable to connect to Capacity Connect server. ' +
-        'Please check that the backend is running and your internet connection is active.'
+        'Unable to connect to Capacity Connect server. Please try again shortly.',
+        { cause: networkErr }
       );
     }
+
+    return handleResponse(response, endpoint);
   }
 
   // Non-core features (assessments, certificates, library, etc.) still use
   // mock data — they have not been migrated to the backend yet.
   return localRequest(endpoint, method, body);
 };
+
+let healthPinged = false;
+
+export const pingHealth = () => {
+  if (healthPinged || typeof window === 'undefined') return;
+  healthPinged = true;
+  
+  const requestUrl = `${API_BASE_URL}/health`;
+  fetch(requestUrl, { method: 'GET' }).catch(() => {
+    // Silent warm-up ping for Render cold starts; ignores errors.
+  });
+};
+
+pingHealth();
 
 export const api = {
   get: (endpoint) => request('GET', endpoint),

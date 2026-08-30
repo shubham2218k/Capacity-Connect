@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { CheckCircle, ArrowLeft, Upload, FileText, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CheckCircle, ArrowLeft, Upload, FileText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 
 const TrainerApplication = () => {
-  const navigate = useNavigate();
   const { applyAsTrainer } = useAuth();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
@@ -82,8 +81,6 @@ const TrainerApplication = () => {
     const key = formData.accessKey.trim();
 
     if (!key) {
-      setOrgDetected(null);
-      setKeyError('');
       return undefined;
     }
 
@@ -92,7 +89,12 @@ const TrainerApplication = () => {
   }, [formData.accessKey, verifyKey]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'accessKey' && !value.trim()) {
+      setOrgDetected(null);
+      setKeyError('');
+    }
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleAddSkill = (skill) => {
@@ -140,24 +142,25 @@ const TrainerApplication = () => {
       fd.append('department', formData.department);
       fd.append('designation', formData.designation);
       fd.append('employeeId', formData.employeeId);
-      fd.append('qualification', formData.highestQualification);
+      fd.append('highestQualification', formData.highestQualification);
       fd.append('institution', formData.institution);
-      fd.append('experience', formData.experienceYears);
+      fd.append('experienceYears', formData.experienceYears);
       fd.append('bio', formData.bio);
-      fd.append('expertise', skills.join(','));
+      fd.append('expertiseAreas', skills.join(', '));
 
-      if (qualificationFile) fd.append('qualificationProof', qualificationFile);
-      if (experienceFile) fd.append('experienceProof', experienceFile);
-      if (identityFile) fd.append('identityProof', identityFile);
+      if (qualificationFile) fd.append('qualificationDoc', qualificationFile);
+      if (experienceFile) fd.append('experienceDoc', experienceFile);
+      if (identityFile) fd.append('identityDoc', identityFile);
 
-      const result = await api.postFormData('/auth/trainer-apply', fd);
+      const result = await applyAsTrainer(fd);
+
       if (result.success) {
         setIsSubmitted(true);
       } else {
-        setError(result.message || 'Application failed');
+        setError(result.message || 'Application submission failed');
       }
     } catch (err) {
-      setError(err.message || 'Application submission failed.');
+      setError(err?.message || 'Server error occurred');
     } finally {
       setIsSubmitting(false);
     }
@@ -165,18 +168,23 @@ const TrainerApplication = () => {
 
   if (isSubmitted) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-color)', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-        <div className="card" style={{ maxWidth: '520px', width: '100%', padding: '3rem 2rem', textAlign: 'center' }}>
-          <CheckCircle size={64} style={{ color: 'var(--success)', margin: '0 auto 1.5rem' }} />
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '1rem' }}>Trainer application submitted successfully.</h1>
-          <div className="badge badge-warning" style={{ fontSize: '1rem', padding: '0.5rem 1rem', marginBottom: '1.5rem' }}>
-            Status: Pending Admin Review
-          </div>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
-            Your professional application and supporting documents have been submitted. An administrator of your organization will inspect your application before approving access.
+      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-color)', padding: '2rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+        <div className="card" style={{ maxWidth: '600px', width: '100%', padding: '3rem 1.5rem', textAlign: 'center', boxSizing: 'border-box' }}>
+          <CheckCircle size={64} color="var(--success)" style={{ margin: '0 auto 1.5rem' }} />
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>Application Submitted</h1>
+          <p style={{ color: 'var(--text-light)', fontSize: '1rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+            Thank you for applying as a Trainer for <strong>{formData.organization || 'your organization'}</strong>.
           </p>
-          <Link to="/login" className="btn btn-primary" style={{ width: '100%' }}>
-            Return to Login
+          <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '1.25rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'left', fontSize: '0.9rem', color: 'var(--text-dark)' }}>
+            <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: 'var(--primary)' }}>What happens next?</p>
+            <ul style={{ margin: 0, paddingLeft: '1.25rem', lineHeight: '1.5' }}>
+              <li>Your Organization Administrator will review your qualifications & credentials.</li>
+              <li>Once approved, your account will be activated with Verified Trainer course creation privileges.</li>
+              <li>You can log in to check your approval status using your email and password.</li>
+            </ul>
+          </div>
+          <Link to="/login" className="btn btn-primary" style={{ padding: '0.85rem 2rem', display: 'inline-block', minHeight: '48px', lineHeight: '24px' }}>
+            Back to Sign In
           </Link>
         </div>
       </div>
@@ -184,16 +192,16 @@ const TrainerApplication = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', padding: '2rem 1rem' }}>
-      <div className="container" style={{ maxWidth: '800px' }}>
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-color)', padding: '2rem 1rem', boxSizing: 'border-box' }}>
+      <div className="container" style={{ maxWidth: '800px', margin: '0 auto', boxSizing: 'border-box' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <Link to="/login" style={{ color: 'var(--text-light)', display: 'flex' }}>
-            <ArrowLeft size={24} />
+          <Link to="/login" aria-label="Back to Sign In" style={{ color: 'var(--text-light)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--white)', flexShrink: 0 }}>
+            <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)' }}>Apply as Trainer</h1>
-            <p style={{ color: 'var(--text-light)' }}>Join Capacity Connect to create courses and train participants.</p>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', margin: 0 }}>Apply as Trainer</h1>
+            <p style={{ color: 'var(--text-light)', margin: '0.25rem 0 0 0', fontSize: '0.95rem' }}>Join Capacity Connect to create courses and train participants.</p>
           </div>
         </div>
 
@@ -206,14 +214,14 @@ const TrainerApplication = () => {
         <form onSubmit={handleSubmit}>
           
           {/* Section 0: Access Key */}
-          <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem', backgroundColor: 'var(--bg-color-alt)' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', color: 'var(--primary)' }}>
+          <div className="card" style={{ padding: '1.75rem 1.25rem', marginBottom: '1.5rem', backgroundColor: 'var(--bg-color-alt)', boxSizing: 'border-box' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', color: 'var(--primary)' }}>
               Organization Verification
             </h2>
             
             <div className="input-group" style={{ marginBottom: orgDetected || keyError ? '0.5rem' : '0' }}>
-              <label htmlFor="accessKey">Organization Access Key (Trainer) *</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label htmlFor="accessKey" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization Access Key (Trainer) *</label>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <input
                   type="text"
                   id="accessKey"
@@ -222,235 +230,222 @@ const TrainerApplication = () => {
                   onChange={handleChange}
                   placeholder="e.g. CC-TNR-XXXXXX"
                   autoComplete="off"
-                  style={{ flex: 1, minWidth: 0 }}
+                  style={{ flex: 1, minWidth: '180px', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}
                   required
                 />
-                <button type="button" onClick={() => verifyKey(formData.accessKey)} disabled={!formData.accessKey.trim()} className="btn btn-secondary" style={{ padding: '0.5rem 1.5rem', whiteSpace: 'nowrap' }}>
-                  {keyValidating ? 'Verifying...' : 'Verify'}
+                <button type="button" onClick={() => verifyKey(formData.accessKey)} disabled={!formData.accessKey.trim()} className="btn btn-secondary" style={{ minHeight: '44px', padding: '0.65rem 1.25rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {keyValidating ? 'Verifying...' : 'Verify Key'}
                 </button>
               </div>
             </div>
 
             {keyError && (
-              <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: 0 }}>{keyError}</p>
+              <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>{keyError}</p>
             )}
             
             {orgDetected && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)', fontSize: '0.9rem', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>
                 <CheckCircle size={16} /> <span>Organization verified: {orgDetected}</span>
               </div>
             )}
           </div>
 
           {/* Personal Information */}
-          <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div className="card" style={{ padding: '1.75rem 1.25rem', marginBottom: '1.5rem', boxSizing: 'border-box' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               Personal Information
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
               <div className="input-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Full Name *</label>
-                <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder="Dr. Jane Doe" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Full Name *</label>
+                <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder="Dr. Jane Doe" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Email Address *</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="jane.doe@example.com" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Email Address *</label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="jane.doe@example.com" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Phone Number *</label>
-                <input type="text" name="phone" value={formData.phone} onChange={handleChange} required placeholder="+91 XXXXX XXXXX" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Phone Number *</label>
+                <input type="text" name="phone" value={formData.phone} onChange={handleChange} required placeholder="+91 XXXXX XXXXX" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Password *</label>
-                <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Password" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Password *</label>
+                <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Password" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Confirm Password *</label>
-                <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Confirm Password" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Confirm Password *</label>
+                <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Confirm Password" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
             </div>
           </div>
 
           {/* Professional Information */}
-          <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+          <div className="card" style={{ padding: '1.75rem 1.25rem', marginBottom: '1.5rem', boxSizing: 'border-box' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               Professional Information
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
               <div className="input-group">
-                <label>Organization *</label>
-                <input type="text" name="organization" value={formData.organization} readOnly placeholder="Verified from Access Key" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-light)' }} />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization</label>
+                <input type="text" name="organization" value={formData.organization} readOnly placeholder="Verified from Access Key" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-light)', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Department</label>
-                <input type="text" name="department" value={formData.department} onChange={handleChange} placeholder="e.g. Climate Research" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Department / Division *</label>
+                <input type="text" name="department" value={formData.department} onChange={handleChange} required placeholder="e.g. Earth Sciences" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Designation *</label>
-                <input type="text" name="designation" value={formData.designation} onChange={handleChange} required placeholder="e.g. Senior Scientist" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Designation *</label>
+                <input type="text" name="designation" value={formData.designation} onChange={handleChange} required placeholder="e.g. Senior Scientist / Assoc. Professor" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               <div className="input-group">
-                <label>Employee ID / Code</label>
-                <input type="text" name="employeeId" value={formData.employeeId} onChange={handleChange} placeholder="e.g. EMP-9921" />
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Employee ID / Faculty Reg. No. *</label>
+                <input type="text" name="employeeId" value={formData.employeeId} onChange={handleChange} required placeholder="e.g. EMP-99201" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
+              </div>
+              <div className="input-group">
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Highest Academic Qualification *</label>
+                <select name="highestQualification" value={formData.highestQualification} onChange={handleChange} required style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', width: '100%', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}>
+                  <option value="">Select Qualification</option>
+                  <option value="Ph.D. / Doctorate">Ph.D. / Doctorate</option>
+                  <option value="Master Degree (M.Tech / M.Sc)">Master's Degree (M.Tech / M.Sc)</option>
+                  <option value="Bachelor Degree (B.Tech / B.Sc)">Bachelor's Degree (B.Tech / B.Sc)</option>
+                  <option value="Other Certification">Other Professional Credential</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Granting University / Institute *</label>
+                <input type="text" name="institution" value={formData.institution} onChange={handleChange} required placeholder="e.g. IIT Bombay / IISc" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
+              </div>
+              <div className="input-group">
+                <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Years of Domain Experience *</label>
+                <input type="number" name="experienceYears" min="0" max="60" value={formData.experienceYears} onChange={handleChange} required placeholder="e.g. 8" style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
             </div>
-          </div>
 
-          {/* Qualifications & Expertise */}
-          <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-              Qualifications & Expertise
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-              <div className="input-group">
-                <label>Highest Qualification *</label>
-                <input type="text" name="highestQualification" value={formData.highestQualification} onChange={handleChange} required placeholder="e.g. Ph.D. in Physics" />
-              </div>
-              <div className="input-group">
-                <label>Institution / University</label>
-                <input type="text" name="institution" value={formData.institution} onChange={handleChange} placeholder="e.g. IIT Delhi" />
-              </div>
+            <div className="input-group" style={{ marginTop: '1.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Expertise & Professional Bio</label>
+              <textarea name="bio" value={formData.bio} onChange={handleChange} rows="3" placeholder="Brief description of teaching background and research specialization..." style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' }} />
             </div>
 
-            <div className="input-group">
-              <label>Trainer Expertise (Select relevant tags) *</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+            {/* Expertise Skills Selection */}
+            <div className="input-group" style={{ marginTop: '1.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Expertise Areas / Competencies</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 {availableSkills.map(skill => (
-                  <button 
-                    key={skill}
+                  <button
                     type="button"
+                    key={skill}
                     onClick={() => handleAddSkill(skill)}
                     style={{
-                      padding: '0.4rem 0.75rem',
+                      padding: '0.65rem 1rem',
+                      minHeight: '44px',
                       borderRadius: '20px',
-                      border: `1px solid ${skills.includes(skill) ? 'var(--secondary)' : 'var(--border-color)'}`,
-                      backgroundColor: skills.includes(skill) ? 'var(--secondary-bg)' : 'var(--white)',
-                      color: skills.includes(skill) ? 'var(--secondary-hover)' : 'var(--text-muted)',
-                      fontSize: '0.85rem',
-                      cursor: 'pointer'
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: skills.includes(skill) ? 'var(--primary)' : 'var(--bg-color-alt)',
+                      color: skills.includes(skill) ? 'white' : 'var(--text-dark)',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center'
                     }}
                   >
-                    {skill}
+                    + {skill}
                   </button>
                 ))}
               </div>
+
               {skills.length > 0 && (
-                <div style={{ padding: '1rem', backgroundColor: 'var(--bg-color-alt)', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>Selected Expertise:</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {skills.map(skill => (
-                      <span key={skill} className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        {skill}
-                        <button type="button" onClick={() => handleRemoveSkill(skill)} style={{ background: 'none', border: 'none', color: 'inherit', display: 'flex', cursor: 'pointer' }}>×</button>
-                      </span>
-                    ))}
-                  </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-color-alt)', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', width: '100%', fontWeight: 600 }}>Selected Competencies:</span>
+                  {skills.map(skill => (
+                    <span key={skill} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'var(--primary)', color: 'white', padding: '0.4rem 0.75rem', borderRadius: '16px', fontSize: '0.85rem' }}>
+                      {skill}
+                      <button type="button" onClick={() => handleRemoveSkill(skill)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontWeight: 'bold', padding: 0, minWidth: '20px', minHeight: '20px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
-
-            <div className="input-group">
-              <label>Years of Training Experience</label>
-              <select name="experienceYears" value={formData.experienceYears} onChange={handleChange}>
-                <option value="">Select...</option>
-                <option value="0-2">0 - 2 Years</option>
-                <option value="3-5">3 - 5 Years</option>
-                <option value="5-10">5 - 10 Years</option>
-                <option value="10+">10+ Years</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label>Professional Bio</label>
-              <textarea 
-                name="bio" 
-                value={formData.bio} 
-                onChange={handleChange}
-                rows={3}
-                placeholder="Briefly describe your professional background and training style..."
-              ></textarea>
-            </div>
           </div>
 
-          {/* Supporting Documents Section */}
-          <div className="card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-              Supporting Documents
+          {/* Qualification Verification Proof Documents */}
+          <div className="card" style={{ padding: '1.75rem 1.25rem', marginBottom: '2rem', boxSizing: 'border-box' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+              Verification Documents
             </h2>
-            <p className="text-light" style={{ fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-              Upload verification proof for administrator inspection. PDF, JPG, JPEG, PNG (Max 10MB per file).
+            <p style={{ color: 'var(--text-light)', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              Admin approval requires verified proof documents for qualification and institutional appointment.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Qualification Proof (Required) */}
-              <div className="input-group">
-                <label>Qualification Certificate / Degree *</label>
-                <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.25rem', backgroundColor: '#f8fafc', position: 'relative', textAlign: 'center', cursor: 'pointer' }}>
-                  <input 
-                    type="file" 
-                    required
-                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                    onChange={(e) => setQualificationFile(e.target.files[0] || null)}
-                  />
-                  <Upload size={24} style={{ color: 'var(--primary)', margin: '0 auto 0.4rem' }} />
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0, color: 'var(--primary)' }}>
-                    {qualificationFile ? qualificationFile.name : 'Upload Qualification Certificate'}
-                  </p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-light)', marginTop: '0.2rem' }}>
-                    Degree, Ph.D. certificate, or professional accreditation
-                  </p>
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1.25rem' }}>
+              
+              {/* Doc 1: Qualification Proof (Required) */}
+              <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center', backgroundColor: 'var(--bg-color-alt)' }}>
+                <Upload size={32} color="var(--primary)" style={{ margin: '0 auto 0.5rem' }} />
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>Qualification Degree Proof *</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginBottom: '0.75rem' }}>Ph.D. / Master Certificate (PDF/Image)</div>
+                <input 
+                  type="file" 
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setQualificationFile(e.target.files[0])}
+                  style={{ fontSize: '0.8rem', width: '100%', minHeight: '44px' }} 
+                  required
+                />
+                {qualificationFile && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                    <FileText size={14} /> {qualificationFile.name}
+                  </div>
+                )}
               </div>
 
-              {/* Experience Proof (Optional) */}
-              <div className="input-group">
-                <label>Experience Proof (Optional)</label>
-                <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.25rem', backgroundColor: '#f8fafc', position: 'relative', textAlign: 'center', cursor: 'pointer' }}>
-                  <input 
-                    type="file" 
-                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                    onChange={(e) => setExperienceFile(e.target.files[0] || null)}
-                  />
-                  <FileText size={24} style={{ color: 'var(--secondary)', margin: '0 auto 0.4rem' }} />
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0, color: 'var(--secondary)' }}>
-                    {experienceFile ? experienceFile.name : 'Upload Experience Proof'}
-                  </p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-light)', marginTop: '0.2rem' }}>
-                    Service letter, teaching record, or employment proof
-                  </p>
-                </div>
+              {/* Doc 2: Experience Proof (Optional) */}
+              <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center', backgroundColor: 'var(--bg-color-alt)' }}>
+                <Upload size={32} color="var(--secondary)" style={{ margin: '0 auto 0.5rem' }} />
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>Experience / Service Letter</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginBottom: '0.75rem' }}>Appointment / Relieving Proof (Optional)</div>
+                <input 
+                  type="file" 
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setExperienceFile(e.target.files[0])}
+                  style={{ fontSize: '0.8rem', width: '100%', minHeight: '44px' }} 
+                />
+                {experienceFile && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                    <FileText size={14} /> {experienceFile.name}
+                  </div>
+                )}
               </div>
 
-              {/* Identity / Employee Proof (Optional) */}
-              <div className="input-group">
-                <label>Identity / Employee ID Proof (Optional)</label>
-                <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.25rem', backgroundColor: '#f8fafc', position: 'relative', textAlign: 'center', cursor: 'pointer' }}>
-                  <input 
-                    type="file" 
-                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                    onChange={(e) => setIdentityFile(e.target.files[0] || null)}
-                  />
-                  <FileText size={24} style={{ color: 'var(--text-muted)', margin: '0 auto 0.4rem' }} />
-                  <p style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
-                    {identityFile ? identityFile.name : 'Upload Employee / Identity Card'}
-                  </p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-light)', marginTop: '0.2rem' }}>
-                    Official employee badge or organization ID
-                  </p>
-                </div>
+              {/* Doc 3: Govt/Org ID Proof (Optional) */}
+              <div style={{ border: '2px dashed var(--border-color)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center', backgroundColor: 'var(--bg-color-alt)' }}>
+                <Upload size={32} color="var(--primary)" style={{ margin: '0 auto 0.5rem' }} />
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>Govt / Institution ID Card</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginBottom: '0.75rem' }}>Employee ID / Official ID (Optional)</div>
+                <input 
+                  type="file" 
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setIdentityFile(e.target.files[0])}
+                  style={{ fontSize: '0.8rem', width: '100%', minHeight: '44px' }} 
+                />
+                {identityFile && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                    <FileText size={14} /> {identityFile.name}
+                  </div>
+                )}
               </div>
+
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '4rem' }}>
-            <Link to="/login" className="btn btn-outline">Cancel</Link>
-            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '0.75rem 2rem', opacity: isSubmitting ? 0.7 : 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '0.85rem 3rem', minHeight: '48px', fontSize: '1.1rem', minWidth: 'min(100%, 280px)', width: '100%', maxWidth: '360px', opacity: isSubmitting ? 0.7 : 1 }}>
               {isSubmitting ? 'Submitting Application...' : 'Submit Trainer Application'}
             </button>
+            <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-light)' }}>
+              Already registered? <Link to="/login" style={{ color: 'var(--secondary)', fontWeight: 600, padding: '0.5rem 0' }}>Sign in here</Link>
+            </p>
           </div>
+
         </form>
 
       </div>

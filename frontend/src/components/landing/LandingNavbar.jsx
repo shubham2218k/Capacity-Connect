@@ -41,6 +41,32 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Prevent background document scrolling while mobile drawer is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.classList.add('lp-scroll-locked');
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.classList.remove('lp-scroll-locked');
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.classList.remove('lp-scroll-locked');
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  // Close mobile drawer automatically if window resizes to desktop width
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1180 && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileOpen]);
+
   const handleNavClick = (sectionId) => {
     setMobileOpen(false);
     setDropdownOpen(false);
@@ -195,9 +221,10 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
             <button
               type="button"
               className="lp-btn lp-btn-secondary"
-              style={{ padding: '0.5rem', minHeight: '44px', width: '44px', justifyContent: 'center' }}
+              style={{ padding: '0.5rem', minHeight: '44px', minWidth: '44px', width: '44px', justifyContent: 'center' }}
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-expanded={mobileOpen}
+              aria-controls="lp-mobile-drawer-panel"
               aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
             >
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}
@@ -207,38 +234,55 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
         </div>
       </div>
 
-      {/* MOBILE DRAWER OVERLAY */}
+      {/* MOBILE BACKDROP & DRAWER OVERLAY */}
       {mobileOpen && (
-        <div className="lp-mobile-drawer mobile-only" role="dialog" aria-modal="true">
-          <button type="button" onClick={() => handleNavClick('overview')} className="lp-mobile-nav-btn">Overview</button>
-          <button type="button" onClick={() => handleNavClick('how-it-works')} className="lp-mobile-nav-btn">How It Works</button>
-          <button type="button" onClick={() => handleNavClick('roles')} className="lp-mobile-nav-btn">Portals</button>
-          <button type="button" onClick={() => handleNavClick('capabilities')} className="lp-mobile-nav-btn">Capabilities</button>
-          <button type="button" onClick={() => handleNavClick('organizations')} className="lp-mobile-nav-btn">For Organizations</button>
+        <>
+          <div 
+            className="lp-mobile-backdrop mobile-only" 
+            onClick={() => setMobileOpen(false)} 
+            aria-hidden="true" 
+          />
 
-          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            <Link to="/login" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-secondary" style={{ width: '100%' }}>
-              Sign In
-            </Link>
-            <Link to="/admin/register" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-primary" style={{ width: '100%' }}>
-              Register Organization / Admin
-            </Link>
-            <Link to="/register" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-outline" style={{ width: '100%' }}>
-              Register as Trainee
-            </Link>
-            <Link to="/trainer/apply" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-secondary" style={{ width: '100%', borderColor: 'var(--lp-violet)', color: 'var(--lp-violet)' }}>
-              Apply as Trainer
-            </Link>
+          <div 
+            id="lp-mobile-drawer-panel"
+            className="lp-mobile-drawer mobile-only" 
+            role="dialog" 
+            aria-modal="true"
+            aria-label="Mobile Navigation"
+          >
+            <button type="button" onClick={() => handleNavClick('overview')} className="lp-mobile-nav-btn">Overview</button>
+            <button type="button" onClick={() => handleNavClick('how-it-works')} className="lp-mobile-nav-btn">How It Works</button>
+            <button type="button" onClick={() => handleNavClick('roles')} className="lp-mobile-nav-btn">Portals</button>
+            <button type="button" onClick={() => handleNavClick('capabilities')} className="lp-mobile-nav-btn">Capabilities</button>
+            <button type="button" onClick={() => handleNavClick('organizations')} className="lp-mobile-nav-btn">For Organizations</button>
+
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', paddingTop: '1.5rem' }}>
+              <Link to="/login" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-secondary" style={{ width: '100%', minHeight: '44px' }}>
+                Sign In
+              </Link>
+              <Link to="/admin/register" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-primary" style={{ width: '100%', minHeight: '44px' }}>
+                Register Organization / Admin
+              </Link>
+              <Link to="/register" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-outline" style={{ width: '100%', minHeight: '44px' }}>
+                Register as Trainee
+              </Link>
+              <Link to="/trainer/apply" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-secondary" style={{ width: '100%', minHeight: '44px', borderColor: 'var(--lp-violet)', color: 'var(--lp-violet)' }}>
+                Apply as Trainer
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <style>{`
-        @media (min-width: 1024px) {
+        @media (min-width: 1180px) {
           .mobile-only { display: none !important; }
         }
-        @media (max-width: 1023px) {
+        @media (max-width: 1179px) {
           .desktop-only { display: none !important; }
+        }
+        @media (max-width: 360px) {
+          .lp-logo-sub { display: none !important; }
         }
       `}</style>
     </header>

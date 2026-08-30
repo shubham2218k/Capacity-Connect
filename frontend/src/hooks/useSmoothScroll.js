@@ -13,6 +13,15 @@ export const useSmoothScroll = (prefersReducedMotion) => {
       return;
     }
 
+    // Lenis should only initialize on desktop devices with fine pointer & hover support
+    const isDesktop = window.innerWidth >= 1180;
+    const hasFinePointer = window.matchMedia ? window.matchMedia('(pointer: fine)').matches : true;
+    const hasHover = window.matchMedia ? window.matchMedia('(hover: hover)').matches : true;
+
+    if (!isDesktop || !hasFinePointer || !hasHover) {
+      return;
+    }
+
     // Add temporary Lenis override class to document root
     document.documentElement.classList.add('cc-lenis-active');
 

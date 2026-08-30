@@ -485,21 +485,31 @@
   color: var(--lp-text-muted);
 }
 
-/* Mobile Drawer Overlay */
+/* Mobile Drawer Backdrop & Overlay */
+.landing-page .lp-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+}
+
 .landing-page .lp-mobile-drawer {
   position: fixed;
-  top: 76px;
+  top: var(--lp-nav-height, 76px);
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--lp-bg-glass);
-  backdrop-filter: blur(20px);
-  padding: 1.5rem;
+  height: calc(100dvh - var(--lp-nav-height, 76px));
+  background: var(--lp-bg-elevated);
+  padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
   z-index: 999;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow: var(--lp-shadow-lg);
 }
 
 .landing-page .lp-mobile-nav-btn {
@@ -512,6 +522,11 @@
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--lp-border);
   min-height: 44px;
+}
+
+body.lp-scroll-locked {
+  overflow: hidden !important;
+  touch-action: none;
 }
 
 /* 2. HERO SECTION */
@@ -827,7 +842,10 @@
   transition: color 0.15s ease;
   background: none;
   border: none;
-  padding: 0;
+  padding: 0.4rem 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   font-size: 0.9rem;
   cursor: pointer;
   text-align: left;

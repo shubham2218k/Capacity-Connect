@@ -29,14 +29,17 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'accessKey' && !value.trim()) {
+      setOrgDetected(null);
+      setKeyError('');
+    }
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
   };
 
-  // Checks the key and returns the result, so the submit handler can reuse it
-  // instead of depending on state that may not have landed yet.
   const verifyKey = useCallback(async (rawKey) => {
     const key = (rawKey || '').trim();
 
@@ -75,13 +78,10 @@ const Register = () => {
     }
   }, []);
 
-  // Verify shortly after the user stops typing - no blur or button click needed.
   useEffect(() => {
     const key = formData.accessKey.trim();
 
     if (!key) {
-      setOrgDetected(null);
-      setKeyError('');
       return undefined;
     }
 
@@ -105,8 +105,6 @@ const Register = () => {
 
     setIsSubmitting(true);
     try {
-      // If the key has not been confirmed yet (or is still being checked),
-      // verify it now rather than refusing to submit.
       let organizationName = orgDetected;
       if (!organizationName) {
         const check = await verifyKey(formData.accessKey);
@@ -139,10 +137,12 @@ const Register = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', padding: '2rem 1rem' }}>
-      <div className="card" style={{ maxWidth: '800px', width: '100%', padding: '2.5rem' }}>
+    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', padding: '2rem 1rem', boxSizing: 'border-box' }}>
+      <div className="card" style={{ maxWidth: '800px', width: '100%', padding: '2.5rem 1.5rem', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ color: 'var(--primary)', fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>Capacity Connect</h1>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <h1 style={{ color: 'var(--primary)', fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.25rem' }}>Capacity Connect</h1>
+          </Link>
           <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>Trainee Registration</p>
         </div>
 
@@ -155,12 +155,12 @@ const Register = () => {
         <form onSubmit={handleRegister}>
           
           {/* Section 0: Access Key */}
-          <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Organization Verification</h3>
+          <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '1.25rem', borderRadius: '8px', marginBottom: '2rem', boxSizing: 'border-box' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700 }}>Organization Verification</h3>
             
             <div className="input-group" style={{ marginBottom: orgDetected || keyError ? '0.5rem' : '0' }}>
-              <label htmlFor="accessKey">Organization Access Key (Trainee) *</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label htmlFor="accessKey" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization Access Key (Trainee) *</label>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <input
                   type="text"
                   id="accessKey"
@@ -169,91 +169,97 @@ const Register = () => {
                   onChange={handleChange}
                   placeholder="e.g. CC-TRN-XXXXXX"
                   autoComplete="off"
-                  style={{ flex: 1, minWidth: 0 }}
+                  style={{ flex: 1, minWidth: '180px', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}
                   required
                 />
-                <button type="button" onClick={() => verifyKey(formData.accessKey)} disabled={!formData.accessKey.trim()} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}>
-                  {keyValidating ? 'Verifying...' : 'Verify'}
+                <button 
+                  type="button" 
+                  onClick={() => verifyKey(formData.accessKey)} 
+                  disabled={!formData.accessKey.trim()} 
+                  className="btn btn-secondary" 
+                  style={{ minHeight: '44px', padding: '0.65rem 1.25rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {keyValidating ? 'Verifying...' : 'Verify Key'}
                 </button>
               </div>
             </div>
 
             {keyError && (
-              <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: 0 }}>{keyError}</p>
+              <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>{keyError}</p>
             )}
             
             {orgDetected && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)', fontSize: '0.9rem', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>
                 <CheckCircle size={16} /> <span>Organization verified: {orgDetected}</span>
               </div>
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
             
             {/* Section 1: Basic Info */}
             <div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Basic Information</h3>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700 }}>Basic Information</h3>
               
               <div className="input-group">
-                <label htmlFor="name">Full Name *</label>
-                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required />
+                <label htmlFor="name" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Full Name *</label>
+                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               
               <div className="input-group">
-                <label htmlFor="email">Email Address *</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
+                <label htmlFor="email" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Email Address *</label>
+                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
 
               <div className="input-group">
-                <label htmlFor="phone">Phone Number</label>
-                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} />
+                <label htmlFor="phone" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Phone Number</label>
+                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
 
               <div className="input-group">
-                <label htmlFor="password">Password *</label>
+                <label htmlFor="password" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Password *</label>
                 <div style={{ position: 'relative' }}>
                   <input 
                     type={showPassword ? 'text' : 'password'} 
                     id="password" name="password" 
                     value={formData.password} onChange={handleChange} 
                     required 
-                    style={{ width: '100%', paddingRight: '2.5rem' }}
+                    style={{ width: '100%', minHeight: '44px', fontSize: '16px', paddingRight: '3rem', boxSizing: 'border-box' }}
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer' }}>
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
               </div>
 
               <div className="input-group">
-                <label htmlFor="confirmPassword">Confirm Password *</label>
-                <input type={showPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+                <label htmlFor="confirmPassword" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Confirm Password *</label>
+                <input type={showPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
             </div>
 
             {/* Section 2: Professional Info */}
             <div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Professional Information</h3>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700 }}>Professional Information</h3>
               
               <div className="input-group">
-                <label htmlFor="organization">Organization / Institution</label>
-                <input type="text" id="organization" name="organization" value={formData.organization} readOnly placeholder="Verified from Access Key" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-light)' }} />
+                <label htmlFor="organization" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization / Institution</label>
+                <input type="text" id="organization" name="organization" value={formData.organization} readOnly placeholder="Verified from Access Key" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-light)', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
               
               <div className="input-group">
-                <label htmlFor="department">Department</label>
-                <input type="text" id="department" name="department" value={formData.department} onChange={handleChange} />
+                <label htmlFor="department" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Department</label>
+                <input type="text" id="department" name="department" value={formData.department} onChange={handleChange} style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
 
               <div className="input-group">
-                <label htmlFor="designation">Designation</label>
-                <input type="text" id="designation" name="designation" value={formData.designation} onChange={handleChange} />
+                <label htmlFor="designation" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Designation</label>
+                <input type="text" id="designation" name="designation" value={formData.designation} onChange={handleChange} style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
               </div>
 
               <div className="input-group">
-                <label htmlFor="qualification">Highest Qualification</label>
-                <select id="qualification" name="qualification" value={formData.qualification} onChange={handleChange} style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', width: '100%' }}>
+                <label htmlFor="qualification" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Highest Qualification</label>
+                <select id="qualification" name="qualification" value={formData.qualification} onChange={handleChange} style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', width: '100%', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}>
                   <option value="">Select Qualification</option>
                   <option value="bachelors">Bachelor's Degree</option>
                   <option value="masters">Master's Degree</option>
@@ -267,11 +273,11 @@ const Register = () => {
           </div>
 
           <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '0.75rem 2rem', fontSize: '1rem', minWidth: '200px', opacity: isSubmitting ? 0.7 : 1 }}>
+            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '0.85rem 2rem', minHeight: '48px', fontSize: '1rem', minWidth: 'min(100%, 220px)', width: '100%', maxWidth: '320px', opacity: isSubmitting ? 0.7 : 1 }}>
               {isSubmitting ? 'Creating Account...' : 'Create Trainee Account'}
             </button>
             <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-light)' }}>
-              Already have an account? <Link to="/login" style={{ color: 'var(--secondary)', fontWeight: 600 }}>Sign in here</Link>
+              Already have an account? <Link to="/login" style={{ color: 'var(--secondary)', fontWeight: 600, padding: '0.5rem 0' }}>Sign in here</Link>
             </p>
           </div>
         </form>

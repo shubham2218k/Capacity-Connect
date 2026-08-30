@@ -149,7 +149,7 @@ const CompetencyMatchSection = () => {
                 max="100"
                 value={weights.skill}
                 onChange={(e) => handleWeightChange('skill', e.target.value)}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--lp-cyan)' }}
+                style={{ width: '100%', cursor: 'pointer', minHeight: '44px', accentColor: 'var(--lp-cyan)' }}
                 aria-label="Skill match weight percentage"
                 aria-valuetext={`${weights.skill} percent`}
               />
@@ -171,7 +171,7 @@ const CompetencyMatchSection = () => {
                 max="100"
                 value={weights.domain}
                 onChange={(e) => handleWeightChange('domain', e.target.value)}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--lp-blue)' }}
+                style={{ width: '100%', cursor: 'pointer', minHeight: '44px', accentColor: 'var(--lp-blue)' }}
                 aria-label="Primary domain weight percentage"
                 aria-valuetext={`${weights.domain} percent`}
               />
@@ -193,7 +193,7 @@ const CompetencyMatchSection = () => {
                 max="100"
                 value={weights.exp}
                 onChange={(e) => handleWeightChange('exp', e.target.value)}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--lp-violet)' }}
+                style={{ width: '100%', cursor: 'pointer', minHeight: '44px', accentColor: 'var(--lp-violet)' }}
                 aria-label="Experience weight percentage"
                 aria-valuetext={`${weights.exp} percent`}
               />
@@ -215,7 +215,7 @@ const CompetencyMatchSection = () => {
                 max="100"
                 value={weights.qual}
                 onChange={(e) => handleWeightChange('qual', e.target.value)}
-                style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--lp-emerald)' }}
+                style={{ width: '100%', cursor: 'pointer', minHeight: '44px', accentColor: 'var(--lp-emerald)' }}
                 aria-label="Qualification weight percentage"
                 aria-valuetext={`${weights.qual} percent`}
               />

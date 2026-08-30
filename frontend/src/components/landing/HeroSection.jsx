@@ -119,7 +119,7 @@ const HeroSection = ({ scrollToSection, theme, prefersReducedMotion }) => {
             </p>
 
             {/* ACTION BUTTONS */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }} data-hero-heading-line="3">
+            <div className="lp-hero-ctas" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }} data-hero-heading-line="3">
               <button 
                 type="button"
                 onClick={() => scrollToSection('capabilities')} 

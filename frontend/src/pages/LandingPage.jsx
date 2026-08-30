@@ -47,7 +47,7 @@ const LandingPage = () => {
     const heroTl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.8 } });
     
     heroTl
-      .fromTo('.lp-navbar', { opacity: 0, y: -20 }, { opacity: 1, y: 0 })
+      .fromTo('.lp-nav-inner', { opacity: 0, y: -20 }, { opacity: 1, y: 0 })
       .fromTo('[data-hero-heading-line]', { opacity: 0, y: 28 }, { opacity: 1, y: 0, stagger: 0.08 }, '-=0.4')
       .fromTo('[data-hero-layer="card"]', { opacity: 0, y: 32, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 1 }, '-=0.6')
       .fromTo('[data-hero-layer^="item-"]', { opacity: 0, x: -16 }, { opacity: 1, x: 0, stagger: 0.08 }, '-=0.5');

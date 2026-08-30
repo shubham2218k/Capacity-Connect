@@ -12,7 +12,7 @@ const SecurityIsolationSection = () => {
             One Platform. Independent Organization Workspaces.
           </h2>
           <p className="lp-subtitle" style={{ marginTop: '0.75rem' }}>
-            Capacity Connect supports multiple independent organizations on a single infrastructure, enforcing strict data isolation and access boundaries.
+            Unique organization access keys restrict registration. Organization-scoped records, JWT authentication and role-based authorization protect each workspace's data boundaries.
           </p>
         </div>
 

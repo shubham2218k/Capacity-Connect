@@ -9,7 +9,7 @@ const AdminMonitoringSection = () => {
         <div className="lp-section-header">
           <span className="lp-section-label">Institutional Oversight</span>
           <h2 className="lp-h2">
-            Real-Time Admin Monitoring & Analytics
+            Admin Analytics & Monitoring
           </h2>
           <p className="lp-subtitle" style={{ marginTop: '0.75rem' }}>
             Empower organization executives and HR directors with transparent workforce capability metrics and progress tracking.
@@ -26,8 +26,8 @@ const AdminMonitoringSection = () => {
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--lp-text)', marginTop: '0.2rem' }}>Capacity Building Executive Control Center</div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <span className="lp-badge lp-badge-cyan">Multi-Tenant Mode</span>
-              <span className="lp-badge lp-badge-emerald">Live Telemetry</span>
+              <span className="lp-badge lp-badge-cyan">Multi-Tenant Organization</span>
+              <span className="lp-badge lp-badge-emerald">Illustrative Dashboard</span>
             </div>
           </div>
 
@@ -82,8 +82,13 @@ const AdminMonitoringSection = () => {
 
           {/* PROGRESS BARS MOCK */}
           <div style={{ backgroundColor: 'var(--lp-bg-elevated)', border: '1px solid var(--lp-border)', borderRadius: 'var(--lp-radius-md)', padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--lp-text)', marginBottom: '1rem' }}>
-              Institutional Competency Growth Progress
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--lp-text)' }}>
+                Institutional Competency Growth Progress
+              </div>
+              <span style={{ fontSize: '0.725rem', color: 'var(--lp-text-muted)', fontStyle: 'italic' }}>
+                Sample workspace data for solution visualization
+              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

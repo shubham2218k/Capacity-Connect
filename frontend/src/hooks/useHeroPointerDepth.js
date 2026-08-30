@@ -69,6 +69,8 @@ export const useHeroPointerDepth = (containerRef, prefersReducedMotion) => {
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseleave', handleMouseLeave);
       gsap.killTweensOf([cardElement, ...items]);
+      gsap.set(cardElement, { rotateX: 0, rotateY: 0, clearProps: 'transform' });
+      gsap.set(items, { x: 0, y: 0, clearProps: 'transform' });
     };
   }, [containerRef, prefersReducedMotion]);
 

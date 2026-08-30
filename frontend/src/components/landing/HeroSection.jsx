@@ -246,7 +246,7 @@ const HeroSection = ({ scrollToSection, theme, prefersReducedMotion }) => {
                       <Target size={20} />
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.925rem', color: 'var(--lp-text)' }}>SIH26075 Competency Engine</div>
+                      <div style={{ fontWeight: 700, fontSize: '0.925rem', color: 'var(--lp-text)' }}>Competency Matching Engine</div>
                       <div style={{ fontSize: '0.775rem', color: 'var(--lp-text-muted)' }}>Weighted 4-Factor Subject & Instructor Matching</div>
                     </div>
                   </div>

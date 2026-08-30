@@ -38,7 +38,7 @@ export const CAPACITY_CYCLE_STEPS = [
   {
     number: '02',
     title: 'Competency Mapping',
-    subtitle: 'SIH26075 Alignment',
+    subtitle: 'Subject Definition',
     desc: 'Required subject topics are structured into weighted competency vectors matching organizational benchmarks.',
     icon: Sliders,
     badge: 'Subject Definition'
@@ -69,17 +69,17 @@ export const CAPACITY_CYCLE_STEPS = [
   },
   {
     number: '06',
-    title: 'Verifiable Certification',
-    subtitle: 'Automated PDF Generation',
-    desc: 'Successful learners instantly earn cryptographically styled, verifiable PDF completion certificates.',
+    title: 'PDF Completion Certificates',
+    subtitle: 'Automated Generation',
+    desc: 'Successful learners earn downloadable PDF completion certificates generated after course completion and assessment.',
     icon: Award,
     badge: 'Credential Issued'
   },
   {
     number: '07',
-    title: 'Admin Monitoring',
-    subtitle: 'Real-Time Oversight',
-    desc: 'Admins track real-time enrollment progress, pass rates, score distributions, and institutional skill readiness.',
+    title: 'Admin Analytics & Monitoring',
+    subtitle: 'Executive Oversight',
+    desc: 'Admins track enrollment progress, pass rates, score distributions, and institutional skill readiness.',
     icon: BarChart3,
     badge: 'Analytics Engine'
   },
@@ -106,8 +106,8 @@ export const ROLE_PORTALS = [
     features: [
       'Manage organization settings & workspace dual access keys',
       'Review and approve pending trainer credentials & profiles',
-      'Execute SIH26075 4-Factor Competency Matching algorithm',
-      'Monitor real-time user enrollments, pass rates, & system analytics',
+      'Execute 4-Factor Competency Matching algorithm',
+      'Monitor user enrollments, pass rates, & system analytics',
       'Broadcast targeted announcements across organization nodes'
     ]
   },
@@ -142,7 +142,7 @@ export const ROLE_PORTALS = [
       'Browse & enroll in organization-mandated capacity-building courses',
       'Study via interactive video player and document viewer',
       'Attempt timed MCQ exams with real-time score feedback',
-      'Download verifiable PDF certificates of completion'
+      'Download PDF certificates of completion'
     ]
   }
 ];
@@ -156,8 +156,8 @@ export const MATCHING_FACTORS = [
 
 export const DEMO_TRAINERS = [
   {
-    name: 'Dr. Vikram R. Sharma',
-    qual: 'Ph.D. Atmospheric Physics',
+    name: 'Trainer Profile A',
+    qual: 'Doctoral / Advanced Domain Degree',
     exp: '14 Years Field Exp',
     domain: 'AWS, Azure Cloud, GIS, Radar Physics',
     score: 94,
@@ -165,8 +165,8 @@ export const DEMO_TRAINERS = [
     rationale: 'Matches 4/4 required competencies + 14 yrs field experience & Ph.D. degree credentials.'
   },
   {
-    name: 'Ananya Deshmukh',
-    qual: 'M.Tech Computer Science',
+    name: 'Trainer Profile B',
+    qual: 'Master Degree Specialization',
     exp: '6 Years Teaching Exp',
     domain: 'React, Node.js, Cloud Architectures',
     score: 68,
@@ -174,10 +174,10 @@ export const DEMO_TRAINERS = [
     rationale: 'Strong cloud skills; missing GIS domain specialization required for course.'
   },
   {
-    name: 'Rajesh K. Patel',
-    qual: 'MBA & HR Analytics',
-    exp: '8 Years Corporate Training',
-    domain: 'Leadership, Team Management',
+    name: 'Trainer Profile C',
+    qual: 'Bachelor Degree Foundation',
+    exp: '3 Years Corporate Training',
+    domain: 'General IT Infrastructure',
     score: 35,
     matchType: 'Unmatched',
     rationale: 'Domain expertise does not overlap with technical GIS & cloud prerequisites.'
@@ -188,7 +188,7 @@ export const BENTO_FEATURES = [
   {
     id: 'governance',
     title: 'Role-Based Governance',
-    desc: 'Strict permission boundaries separating Admin, Trainer, and Trainee workflows in a multi-tenant ecosystem.',
+    desc: 'Strict permission boundaries separating Admin, Trainer, and Trainee workflows in a multi-organization platform.',
     icon: ShieldCheck,
     size: 'wide',
     accent: '#0EA5E9'
@@ -227,8 +227,8 @@ export const BENTO_FEATURES = [
   },
   {
     id: 'certificates',
-    title: 'Verifiable PDF Certificates',
-    desc: 'Instant generation of downloadable, cryptographically styled certificates of completion.',
+    title: 'PDF Completion Certificates',
+    desc: 'Downloadable PDF certificates generated after successful course completion and assessment.',
     icon: Award,
     size: 'normal',
     accent: '#EC4899'
@@ -243,7 +243,7 @@ export const BENTO_FEATURES = [
   },
   {
     id: 'analytics',
-    title: 'Real-Time Analytics',
+    title: 'Admin Analytics & Monitoring',
     desc: 'Ecosystem dashboard tracking user progress, course completions, and assessment metrics.',
     icon: BarChart3,
     size: 'normal',
@@ -259,7 +259,7 @@ export const BENTO_FEATURES = [
   },
   {
     id: 'mapping',
-    title: 'SIH26075 Competency Engine',
+    title: 'Competency Matching Engine',
     desc: 'Algorithmic matching pairing specialized training subjects with verified domain experts using a weighted 4-factor scoring model.',
     icon: Target,
     size: 'wide',
@@ -275,8 +275,8 @@ export const BENTO_FEATURES = [
   },
   {
     id: 'security',
-    title: 'Multi-Tenant Isolation',
-    desc: 'Cryptographically unique dual access keys ensuring complete data isolation between independent organizations.',
+    title: 'Multi-Organization Security',
+    desc: 'Unique organization access keys and role-based authorization protecting each workspace\'s data boundaries.',
     icon: Building2,
     size: 'wide',
     accent: '#0284C7'

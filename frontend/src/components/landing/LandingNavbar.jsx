@@ -75,17 +75,17 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
             </button>
             <button 
               type="button"
-              onClick={() => handleNavClick('roles')} 
-              className="lp-nav-btn"
-            >
-              Portals
-            </button>
-            <button 
-              type="button"
               onClick={() => handleNavClick('how-it-works')} 
               className="lp-nav-btn"
             >
               How It Works
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleNavClick('roles')} 
+              className="lp-nav-btn"
+            >
+              Portals
             </button>
             <button 
               type="button"
@@ -211,8 +211,8 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
       {mobileOpen && (
         <div className="lp-mobile-drawer mobile-only" role="dialog" aria-modal="true">
           <button type="button" onClick={() => handleNavClick('overview')} className="lp-mobile-nav-btn">Overview</button>
-          <button type="button" onClick={() => handleNavClick('roles')} className="lp-mobile-nav-btn">Portals</button>
           <button type="button" onClick={() => handleNavClick('how-it-works')} className="lp-mobile-nav-btn">How It Works</button>
+          <button type="button" onClick={() => handleNavClick('roles')} className="lp-mobile-nav-btn">Portals</button>
           <button type="button" onClick={() => handleNavClick('capabilities')} className="lp-mobile-nav-btn">Capabilities</button>
           <button type="button" onClick={() => handleNavClick('organizations')} className="lp-mobile-nav-btn">For Organizations</button>
 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, Menu, X, Building2, UserCheck, GraduationCap } from 'lucide-react';
+import { ChevronDown, Menu, X, Building2, UserCheck, GraduationCap, Sun, Moon } from 'lucide-react';
 
-const LandingNavbar = ({ scrollToSection }) => {
+const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -49,6 +49,9 @@ const LandingNavbar = ({ scrollToSection }) => {
 
   return (
     <header className={`lp-navbar ${isScrolled ? 'lp-navbar-scrolled' : ''}`}>
+      {/* Scroll Progress Bar Indicator */}
+      <div id="lp-scroll-progress-bar" className="lp-scroll-progress" />
+
       <div className="lp-container">
         <div className="lp-nav-inner">
           
@@ -101,7 +104,20 @@ const LandingNavbar = ({ scrollToSection }) => {
           </nav>
 
           {/* DESKTOP ACTIONS & DROPDOWN */}
-          <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            
+            {/* THEME TOGGLE BUTTON */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="lp-theme-btn"
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              aria-pressed={theme === 'light'}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             <Link to="/login" className="lp-btn lp-btn-secondary">
               Sign In
             </Link>
@@ -163,17 +179,30 @@ const LandingNavbar = ({ scrollToSection }) => {
             </div>
           </div>
 
-          {/* MOBILE TOGGLE BUTTON */}
-          <button
-            type="button"
-            className="mobile-only lp-btn lp-btn-secondary"
-            style={{ padding: '0.5rem', minHeight: '44px', width: '44px', justifyContent: 'center' }}
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-expanded={mobileOpen}
-            aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
-          >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* MOBILE CONTROLS */}
+          <div className="mobile-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="lp-theme-btn"
+              aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              aria-pressed={theme === 'light'}
+              title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            <button
+              type="button"
+              className="lp-btn lp-btn-secondary"
+              style={{ padding: '0.5rem', minHeight: '44px', width: '44px', justifyContent: 'center' }}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
+              aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+            >
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
 
         </div>
       </div>

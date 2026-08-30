@@ -4,12 +4,12 @@
    ========================================================================== */
 
 .landing-page {
-  /* Color Palette Tokens */
+  /* Default / Fallback CSS Variables */
   --lp-bg: #06101D;
   --lp-bg-elevated: #0B1728;
   --lp-bg-surface: #0F1E33;
   --lp-bg-glass: rgba(15, 30, 51, 0.75);
-  --lp-bg-glass-card: rgba(11, 23, 40, 0.8);
+  --lp-bg-glass-card: rgba(11, 23, 40, 0.85);
   
   --lp-border: rgba(226, 232, 240, 0.12);
   --lp-border-hover: rgba(34, 211, 238, 0.35);
@@ -48,6 +48,75 @@
   position: relative;
   overflow-x: hidden;
   line-height: 1.6;
+
+  /* Theme transition properties */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark Theme Explicit Tokens */
+.landing-page[data-theme="dark"] {
+  color-scheme: dark;
+  --lp-bg: #06101D;
+  --lp-bg-elevated: #0B1728;
+  --lp-bg-surface: #0F1E33;
+  --lp-bg-glass: rgba(15, 30, 51, 0.85);
+  --lp-bg-glass-card: rgba(11, 23, 40, 0.85);
+  
+  --lp-border: rgba(226, 232, 240, 0.12);
+  --lp-border-hover: rgba(34, 211, 238, 0.35);
+  --lp-border-glow: rgba(34, 211, 238, 0.5);
+
+  --lp-text: #F7FBFF;
+  --lp-text-muted: #A8B6C9;
+  --lp-text-dim: #64748B;
+
+  --lp-cyan: #22D3EE;
+  --lp-cyan-glow: rgba(34, 211, 238, 0.15);
+  --lp-blue: #3B82F6;
+  --lp-blue-glow: rgba(59, 130, 246, 0.15);
+  --lp-violet: #8B5CF6;
+  --lp-violet-glow: rgba(139, 92, 246, 0.15);
+  --lp-emerald: #34D399;
+  --lp-emerald-glow: rgba(52, 211, 153, 0.15);
+  --lp-amber: #F59E0B;
+
+  --lp-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --lp-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --lp-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --lp-shadow-glow: 0 0 30px rgba(34, 211, 238, 0.12);
+}
+
+/* Light Theme Explicit Tokens */
+.landing-page[data-theme="light"] {
+  color-scheme: light;
+  --lp-bg: #F4F8FC;
+  --lp-bg-elevated: #FFFFFF;
+  --lp-bg-surface: #EAF1F8;
+  --lp-bg-glass: rgba(255, 255, 255, 0.88);
+  --lp-bg-glass-card: rgba(255, 255, 255, 0.92);
+
+  --lp-border: rgba(15, 43, 73, 0.14);
+  --lp-border-hover: rgba(8, 145, 178, 0.4);
+  --lp-border-glow: rgba(8, 145, 178, 0.25);
+
+  --lp-text: #071321;
+  --lp-text-muted: #52657B;
+  --lp-text-dim: #64748B;
+
+  --lp-cyan: #0891B2;
+  --lp-cyan-glow: rgba(8, 145, 178, 0.12);
+  --lp-blue: #2563EB;
+  --lp-blue-glow: rgba(37, 99, 235, 0.12);
+  --lp-violet: #7C3AED;
+  --lp-violet-glow: rgba(124, 58, 237, 0.12);
+  --lp-emerald: #059669;
+  --lp-emerald-glow: rgba(5, 150, 105, 0.12);
+  --lp-amber: #D97706;
+
+  --lp-shadow-sm: 0 2px 4px rgba(7, 19, 33, 0.04);
+  --lp-shadow-md: 0 8px 24px rgba(7, 19, 33, 0.08);
+  --lp-shadow-lg: 0 16px 40px rgba(7, 19, 33, 0.12);
+  --lp-shadow-glow: 0 0 30px rgba(8, 145, 178, 0.1);
 }
 
 /* Container Utility */
@@ -185,6 +254,32 @@
   transform: translateY(-1px);
 }
 
+/* Theme Toggle Button Icon Rotation */
+.landing-page .lp-theme-btn {
+  background: var(--lp-bg-surface);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-text);
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border-radius: var(--lp-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.landing-page .lp-theme-btn:hover {
+  border-color: var(--lp-border-hover);
+  color: var(--lp-cyan);
+  transform: scale(1.05);
+}
+
+.landing-page .lp-theme-btn svg {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
 /* Section Wrapper Rules */
 .landing-page .lp-section {
   padding: 5.5rem 0;
@@ -219,7 +314,7 @@
   border-radius: var(--lp-radius-lg);
   padding: 1.75rem;
   backdrop-filter: blur(12px);
-  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -251,21 +346,32 @@
    SECTION-SPECIFIC STYLES
    ========================================================================== */
 
-/* 1. NAVBAR */
+/* 1. NAVBAR & PROGRESS INDICATOR */
 .landing-page .lp-navbar {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(6, 16, 29, 0.85);
+  background: var(--lp-bg-glass);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--lp-border);
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.landing-page .lp-scroll-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2.5px;
+  background: linear-gradient(90deg, var(--lp-cyan) 0%, var(--lp-blue) 50%, var(--lp-violet) 100%);
+  transform-origin: 0% 50%;
+  transform: scaleX(0);
+  z-index: 110;
 }
 
 .landing-page .lp-navbar-scrolled {
-  background: rgba(6, 16, 29, 0.95);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  border-bottom-color: rgba(34, 211, 238, 0.2);
+  box-shadow: var(--lp-shadow-md);
+  border-bottom-color: var(--lp-border-hover);
 }
 
 .landing-page .lp-nav-inner {
@@ -385,7 +491,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(6, 16, 29, 0.98);
+  background: var(--lp-bg-glass);
   backdrop-filter: blur(20px);
   padding: 1.5rem;
   z-index: 999;
@@ -410,8 +516,8 @@
 /* 2. HERO SECTION */
 .landing-page .lp-hero {
   padding: 4.5rem 0 5.5rem;
-  background: radial-gradient(circle at 70% 30%, rgba(14, 165, 233, 0.12) 0%, rgba(6, 16, 29, 0) 60%),
-              radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.1) 0%, rgba(6, 16, 29, 0) 50%);
+  background: radial-gradient(circle at 70% 30%, var(--lp-cyan-glow) 0%, rgba(6, 16, 29, 0) 60%),
+              radial-gradient(circle at 20% 80%, var(--lp-violet-glow) 0%, rgba(6, 16, 29, 0) 50%);
   border-bottom: 1px solid var(--lp-border);
 }
 
@@ -434,7 +540,7 @@
   border: 1px solid var(--lp-border-hover);
   border-radius: var(--lp-radius-xl);
   padding: 1.5rem;
-  box-shadow: var(--lp-shadow-lg), 0 0 40px rgba(14, 165, 233, 0.15);
+  box-shadow: var(--lp-shadow-lg), var(--lp-shadow-glow);
   position: relative;
 }
 
@@ -474,7 +580,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.3s ease;
 }
 
 .landing-page .lp-preview-item:hover {
@@ -508,7 +614,7 @@
   color: var(--lp-text);
   font-size: 0.9rem;
   font-weight: 600;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.3s ease;
 }
 
 .landing-page .lp-audience-pill:hover {
@@ -531,7 +637,7 @@
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.3s ease;
 }
 
 .landing-page .lp-cycle-card:hover {
@@ -561,7 +667,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease;
 }
 
 .landing-page .lp-role-card:hover {
@@ -664,7 +770,7 @@
 
 /* 10. FINAL CTA */
 .landing-page .lp-final-cta-card {
-  background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.2) 0%, rgba(11, 23, 40, 0.95) 70%);
+  background: radial-gradient(circle at 50% 0%, var(--lp-cyan-glow) 0%, var(--lp-bg-elevated) 70%);
   border: 1px solid var(--lp-border-glow);
   border-radius: var(--lp-radius-xl);
   padding: 4rem 2rem;
@@ -674,7 +780,7 @@
 
 /* 11. FOOTER */
 .landing-page .lp-footer {
-  background: #030810;
+  background: var(--lp-bg-elevated);
   border-top: 1px solid var(--lp-border);
   padding: 4.5rem 0 2.5rem;
   color: var(--lp-text-dim);
@@ -715,4 +821,25 @@
 
 .landing-page .lp-footer-link:hover {
   color: var(--lp-cyan);
+}
+
+/* Lenis override while landing page is mounted */
+html.cc-lenis-active {
+  scroll-behavior: auto !important;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .landing-page,
+  .landing-page *,
+  .landing-page *::before,
+  .landing-page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .landing-page .lp-theme-btn:hover {
+    transform: none !important;
+  }
 }

@@ -1,3 +1,4 @@
+import { lazy, Suspense, useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -11,24 +12,109 @@ import {
   Globe2
 } from 'lucide-react';
 
-const HeroSection = ({ scrollToSection }) => {
+import HeroSceneFallback from './HeroSceneFallback';
+import HeroSceneBoundary from './HeroSceneBoundary';
+import { useHeroSceneEligibility } from '../../hooks/useHeroSceneEligibility';
+import { useHeroPointerDepth } from '../../hooks/useHeroPointerDepth';
+
+// Lazy-load WebGL Canvas Chunk
+const HeroScene = lazy(() => import('./HeroScene'));
+
+const HeroSection = ({ scrollToSection, theme, prefersReducedMotion }) => {
+  const containerRef = useRef(null);
+  const isEligible = useHeroSceneEligibility(prefersReducedMotion);
+  const pointerRef = useHeroPointerDepth(containerRef, prefersReducedMotion);
+
+  // Viewport visibility & Tab active state for frameloop optimization
+  const [isHeroInView, setIsHeroInView] = useState(true);
+  const [isTabActive, setIsTabActive] = useState(true);
+  const [hasContextError, setHasContextError] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const node = containerRef.current;
+
+    // 1. Intersection Observer for viewport visibility
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsHeroInView(entry.isIntersecting);
+        if (!entry.isIntersecting && pointerRef.current) {
+          // Reset pointer target when leaving viewport
+          pointerRef.current = { x: 0, y: 0 };
+        }
+      },
+      { threshold: 0.05 }
+    );
+
+    if (node) {
+      observer.observe(node);
+    }
+
+    // 2. Tab visibility listener
+    const handleVisibilityChange = () => {
+      const active = document.visibilityState === 'visible';
+      setIsTabActive(active);
+      if (!active && pointerRef.current) {
+        pointerRef.current = { x: 0, y: 0 };
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (node) observer.unobserve(node);
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [pointerRef]);
+
+  const showWebGL = isEligible && !hasContextError;
+  const isFrameloopActive = isHeroInView && isTabActive;
+
   return (
-    <section className="lp-hero" data-hero-container>
-      <div className="lp-container">
+    <section 
+      ref={containerRef}
+      className="lp-hero" 
+      data-hero-container
+      style={{ position: 'relative', overflow: 'hidden' }}
+    >
+      {/* ALWAYS RENDER STATIC FALLBACK UNDERNEATH */}
+      <HeroSceneFallback theme={theme} />
+
+      {/* WEBGL CANVAS (RENDERED ONLY WHEN ELIGIBLE AND NO CONTEXT ERROR) */}
+      {showWebGL && (
+        <HeroSceneBoundary theme={theme}>
+          <Suspense fallback={null}>
+            <HeroScene 
+              theme={theme} 
+              pointerRef={pointerRef} 
+              isFrameloopActive={isFrameloopActive}
+              onContextLost={() => setHasContextError(true)}
+            />
+          </Suspense>
+        </HeroSceneBoundary>
+      )}
+
+      {/* HERO DOM CONTENT (Z-INDEX 10, FULLY CLICKABLE) */}
+      <div className="lp-container" style={{ position: 'relative', zIndex: 10 }}>
         <div className="lp-hero-grid">
           
           {/* HERO TEXT COLUMN */}
-          <div>
+          <div style={{ position: 'relative' }}>
             <div className="lp-eyebrow" data-hero-heading-line="0">
               <Sparkles size={16} />
               Digital Capacity Building & Competency Management
             </div>
 
+            {/* SIMPLIFIED 3-LINE HEADLINE WITH SOLID BRAND ACCENT (NO RAINBOW GRADIENT) */}
             <h1 className="lp-h1" data-hero-heading-line="1">
-              Build Skills. <span className="lp-text-gradient">Map Competencies.</span> Measure Impact.
+              Build Skills.<br />
+              <span className="lp-hero-accent-text">Map Competencies.</span><br />
+              Measure Impact.
             </h1>
 
-            <p className="lp-subtitle" style={{ marginBottom: '2.25rem', maxWidth: '580px' }} data-hero-heading-line="2">
+            <p className="lp-subtitle" style={{ marginBottom: '2.25rem', maxWidth: '560px' }} data-hero-heading-line="2">
               A secure, multi-organization capacity-building ecosystem connecting administrators, trainers and trainees—from identified needs to measurable outcomes.
             </p>
 
@@ -86,8 +172,12 @@ const HeroSection = ({ scrollToSection }) => {
           </div>
 
           {/* WORKSPACE DASHBOARD PREVIEW COLUMN */}
-          <div data-hero-layer="container">
-            <div className="lp-dashboard-preview" data-hero-layer="card">
+          <div data-hero-layer="container" style={{ perspective: '1200px' }}>
+            <div 
+              className="lp-dashboard-preview" 
+              data-hero-layer="card"
+              style={{ transformStyle: 'preserve-3d' }}
+            >
               
               {/* Header bar */}
               <div className="lp-preview-bar">

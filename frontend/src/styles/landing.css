@@ -516,9 +516,22 @@
 /* 2. HERO SECTION */
 .landing-page .lp-hero {
   padding: 4.5rem 0 5.5rem;
-  background: radial-gradient(circle at 70% 30%, var(--lp-cyan-glow) 0%, rgba(6, 16, 29, 0) 60%),
-              radial-gradient(circle at 20% 80%, var(--lp-violet-glow) 0%, rgba(6, 16, 29, 0) 50%);
+  background: radial-gradient(ellipse at 80% 30%, var(--lp-cyan-glow) 0%, transparent 60%);
   border-bottom: 1px solid var(--lp-border);
+}
+
+.landing-page[data-theme="light"] .lp-hero {
+  background: radial-gradient(ellipse at 80% 30%, rgba(8, 145, 178, 0.08) 0%, transparent 60%);
+}
+
+.landing-page .lp-hero-accent-text {
+  color: var(--lp-cyan);
+  font-weight: 800;
+}
+
+.landing-page[data-theme="light"] .lp-hero-accent-text {
+  color: #0284C7;
+  font-weight: 800;
 }
 
 .landing-page .lp-hero-grid {

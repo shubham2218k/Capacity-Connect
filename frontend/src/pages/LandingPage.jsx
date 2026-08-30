@@ -52,7 +52,20 @@ const LandingPage = () => {
       .fromTo('[data-hero-layer="card"]', { opacity: 0, y: 32, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 1 }, '-=0.6')
       .fromTo('[data-hero-layer^="item-"]', { opacity: 0, x: -16 }, { opacity: 1, x: 0, stagger: 0.08 }, '-=0.5');
 
-    // 3. Reusable Section Scroll Reveals
+    // 3. Subtle Non-Pinned Hero Exit Transition on Scroll
+    gsap.to('[data-hero-container]', {
+      opacity: 0.85,
+      y: -20,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '[data-hero-container]',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true
+      }
+    });
+
+    // 4. Reusable Section Scroll Reveals
     const revealSections = gsap.utils.toArray('[data-section]');
     revealSections.forEach((section) => {
       const header = section.querySelector('.lp-section-header');
@@ -117,7 +130,7 @@ const LandingPage = () => {
   return (
     <div ref={landingRef} className="landing-page" data-theme={theme}>
       <LandingNavbar scrollToSection={scrollTo} theme={theme} toggleTheme={toggleTheme} />
-      <HeroSection scrollToSection={scrollTo} />
+      <HeroSection scrollToSection={scrollTo} theme={theme} prefersReducedMotion={prefersReducedMotion} />
       <AudienceStrip />
       <CapacityCycleSection />
       <RolePortalsSection />

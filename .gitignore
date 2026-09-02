@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+server/node_modules/
+
+# Production builds
+dist/
+frontend/dist/
+frontend/dist-ssr/
+
+# Environment files
+.env
+.env.local
+frontend/.env
+server/.env
+
+# IDE / Tooling
+.vscode/
+.idea/
+.claude/
+.gemini/
+.DS_Store
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Server Uploads
+server/uploads/*
+!server/uploads/**/.gitkeep

@@ -1,10 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, User, Briefcase, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+import { AuthPageShell } from '../components/auth/AuthPageShell';
+import { FormProgress } from '../components/auth/FormProgress';
+import { FormSection } from '../components/auth/FormSection';
+import { AnimatedActionButton } from '../components/auth/AnimatedActionButton';
+import { FormAlertBanner, FieldFeedback, AccessKeyStatusBadge } from '../components/auth/FieldFeedback';
 import { api } from '../services/api';
 
+const STEPS = [
+  { title: 'Verify Organization' },
+  { title: 'Personal Details' },
+  { title: 'Profile & Review' }
+];
+
 const Register = () => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -17,9 +29,10 @@ const Register = () => {
     confirmPassword: '',
     accessKey: ''
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [keyValidating, setKeyValidating] = useState(false);
   const [keyError, setKeyError] = useState('');
   const [orgDetected, setOrgDetected] = useState(null);
@@ -34,10 +47,10 @@ const Register = () => {
       setOrgDetected(null);
       setKeyError('');
     }
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   const verifyKey = useCallback(async (rawKey) => {
@@ -46,7 +59,7 @@ const Register = () => {
     if (!key) {
       setOrgDetected(null);
       setKeyError('');
-      setFormData(prev => ({ ...prev, organization: '' }));
+      setFormData((prev) => ({ ...prev, organization: '' }));
       return { ok: false, message: 'Please enter your Organization Trainee Access Key.' };
     }
 
@@ -59,18 +72,18 @@ const Register = () => {
 
       if (!organizationName) {
         setOrgDetected(null);
-        setFormData(prev => ({ ...prev, organization: '' }));
+        setFormData((prev) => ({ ...prev, organization: '' }));
         setKeyError('Invalid organization access key.');
         return { ok: false, message: 'Invalid organization access key.' };
       }
 
       setOrgDetected(organizationName);
-      setFormData(prev => ({ ...prev, organization: organizationName }));
+      setFormData((prev) => ({ ...prev, organization: organizationName }));
       return { ok: true, organizationName };
     } catch (err) {
       const message = err?.message || 'Invalid organization access key.';
       setOrgDetected(null);
-      setFormData(prev => ({ ...prev, organization: '' }));
+      setFormData((prev) => ({ ...prev, organization: '' }));
       setKeyError(message);
       return { ok: false, message };
     } finally {
@@ -80,26 +93,78 @@ const Register = () => {
 
   useEffect(() => {
     const key = formData.accessKey.trim();
+    if (!key) return undefined;
 
-    if (!key) {
-      return undefined;
-    }
+    const timer = setTimeout(() => {
+      verifyKey(key);
+    }, 500);
 
-    const timer = setTimeout(() => { verifyKey(key); }, 500);
     return () => clearTimeout(timer);
   }, [formData.accessKey, verifyKey]);
+
+  const validateStep = (step) => {
+    const errors = {};
+    if (step === 1) {
+      if (!formData.accessKey.trim()) {
+        errors.accessKey = 'Trainee Access Key is required';
+      } else if (!orgDetected && !keyValidating) {
+        errors.accessKey = keyError || 'Please verify your access key before continuing';
+      }
+    } else if (step === 2) {
+      if (!formData.name.trim()) errors.name = 'Full Name is required';
+      if (!formData.email.trim()) errors.email = 'Email Address is required';
+      if (!formData.password) errors.password = 'Password is required';
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+    }
+
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      const firstKey = Object.keys(errors)[0];
+      const elem = document.getElementById(firstKey);
+      if (elem) elem.focus();
+      return false;
+    }
+    return true;
+  };
+
+  const handleNextStep = async () => {
+    setError('');
+    if (currentStep === 1 && !orgDetected) {
+      const check = await verifyKey(formData.accessKey);
+      if (!check.ok) {
+        setFieldErrors({ accessKey: check.message });
+        return;
+      }
+    }
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+    }
+  };
+
+  const handlePrevStep = () => {
+    setError('');
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleStepClick = (stepNum) => {
+    if (stepNum < currentStep) {
+      setCurrentStep(stepNum);
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
 
     if (!formData.name || !formData.email || !formData.password) {
-      setError('Please fill in all required fields');
+      setError('Please fill in all required fields.');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Passwords do not match.');
       return;
     }
 
@@ -129,38 +194,41 @@ const Register = () => {
       if (result.success) {
         navigate('/trainee/dashboard');
       } else {
-        setError(result.message || 'Registration failed');
+        setError(result.message || 'Trainee registration failed.');
       }
+    } catch (err) {
+      setError(err?.message || 'Server error occurred.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', padding: '2rem 1rem', boxSizing: 'border-box' }}>
-      <div className="card" style={{ maxWidth: '800px', width: '100%', padding: '2.5rem 1.5rem', boxSizing: 'border-box' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <h1 style={{ color: 'var(--primary)', fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.25rem' }}>Capacity Connect</h1>
-          </Link>
-          <p style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>Trainee Registration</p>
-        </div>
+    <AuthPageShell
+      illustrationType="register"
+      currentStep={currentStep}
+      title="Trainee Registration"
+      subtitle="Join your institutional learning & capacity program"
+    >
+      <FormProgress steps={STEPS} currentStep={currentStep} onStepClick={handleStepClick} />
 
-        {error && (
-          <div style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '0.75rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-            {error}
-          </div>
-        )}
+      <FormAlertBanner error={error} />
 
-        <form onSubmit={handleRegister}>
-          
-          {/* Section 0: Access Key */}
-          <div style={{ backgroundColor: 'var(--bg-color-alt)', padding: '1.25rem', borderRadius: '8px', marginBottom: '2rem', boxSizing: 'border-box' }}>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700 }}>Organization Verification</h3>
-            
-            <div className="input-group" style={{ marginBottom: orgDetected || keyError ? '0.5rem' : '0' }}>
-              <label htmlFor="accessKey" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization Access Key (Trainee) *</label>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <form onSubmit={handleRegister} noValidate>
+        
+        {/* Stage 1: Verify Organization */}
+        {currentStep === 1 && (
+          <FormSection
+            title="Organization Verification"
+            icon={KeyRound}
+            description="Enter the Trainee Access Key provided by your organization."
+            highlight
+          >
+            <div className="cc-form-group">
+              <label htmlFor="accessKey" className="cc-form-label">
+                <span>Organization Trainee Access Key <span className="cc-form-label-required">*</span></span>
+              </label>
+              <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <input
                   type="text"
                   id="accessKey"
@@ -168,98 +236,212 @@ const Register = () => {
                   value={formData.accessKey}
                   onChange={handleChange}
                   placeholder="e.g. CC-TRN-XXXXXX"
+                  className={`cc-input ${fieldErrors.accessKey ? 'cc-input-error' : ''}`}
+                  style={{ flex: 1, minWidth: '220px' }}
                   autoComplete="off"
-                  style={{ flex: 1, minWidth: '180px', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}
                   required
                 />
-                <button 
-                  type="button" 
-                  onClick={() => verifyKey(formData.accessKey)} 
-                  disabled={!formData.accessKey.trim()} 
-                  className="btn btn-secondary" 
-                  style={{ minHeight: '44px', padding: '0.65rem 1.25rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                <AnimatedActionButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => verifyKey(formData.accessKey)}
+                  disabled={!formData.accessKey.trim() || keyValidating}
+                  isLoading={keyValidating}
+                  loadingText="Verifying..."
+                  style={{ minHeight: '46px', padding: '0.65rem 1.25rem' }}
                 >
-                  {keyValidating ? 'Verifying...' : 'Verify Key'}
-                </button>
+                  Verify Key
+                </AnimatedActionButton>
+              </div>
+
+              <AccessKeyStatusBadge
+                isValidating={keyValidating}
+                isVerified={!!orgDetected}
+                organizationName={orgDetected}
+                keyError={keyError}
+              />
+              <FieldFeedback error={fieldErrors.accessKey} />
+            </div>
+          </FormSection>
+        )}
+
+        {/* Stage 2: Personal Details */}
+        {currentStep === 2 && (
+          <FormSection
+            title="Personal Details"
+            icon={User}
+            description="Provide your account information for participant identification."
+          >
+            <div className="cc-form-group">
+              <label htmlFor="name" className="cc-form-label">
+                <span>Full Name <span className="cc-form-label-required">*</span></span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Jane Doe"
+                className={`cc-input ${fieldErrors.name ? 'cc-input-error' : ''}`}
+                autoComplete="name"
+                required
+              />
+              <FieldFeedback error={fieldErrors.name} />
+            </div>
+
+            <div className="cc-form-grid-2">
+              <div className="cc-form-group">
+                <label htmlFor="email" className="cc-form-label">
+                  <span>Email Address <span className="cc-form-label-required">*</span></span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="jane.doe@example.com"
+                  className={`cc-input ${fieldErrors.email ? 'cc-input-error' : ''}`}
+                  autoComplete="email"
+                  required
+                />
+                <FieldFeedback error={fieldErrors.email} />
+              </div>
+
+              <div className="cc-form-group">
+                <label htmlFor="phone" className="cc-form-label">
+                  <span>Phone Number</span>
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+1 (555) 019-2831"
+                  className="cc-input"
+                  autoComplete="tel"
+                />
               </div>
             </div>
 
-            {keyError && (
-              <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: '0.5rem 0 0' }}>{keyError}</p>
-            )}
-            
-            {orgDetected && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--success)', fontSize: '0.9rem', fontWeight: 600, marginTop: '0.5rem' }}>
-                <CheckCircle size={16} /> <span>Organization verified: {orgDetected}</span>
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
-            
-            {/* Section 1: Basic Info */}
-            <div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700 }}>Basic Information</h3>
-              
-              <div className="input-group">
-                <label htmlFor="name" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Full Name *</label>
-                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-              
-              <div className="input-group">
-                <label htmlFor="email" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Email Address *</label>
-                <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="phone" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Phone Number</label>
-                <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="password" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Password *</label>
-                <div style={{ position: 'relative' }}>
-                  <input 
-                    type={showPassword ? 'text' : 'password'} 
-                    id="password" name="password" 
-                    value={formData.password} onChange={handleChange} 
-                    required 
-                    style={{ width: '100%', minHeight: '44px', fontSize: '16px', paddingRight: '3rem', boxSizing: 'border-box' }}
+            <div className="cc-form-grid-2">
+              <div className="cc-form-group">
+                <label htmlFor="password" className="cc-form-label">
+                  <span>Password <span className="cc-form-label-required">*</span></span>
+                </label>
+                <div className="cc-password-wrapper">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Create password"
+                    className={`cc-input ${fieldErrors.password ? 'cc-input-error' : ''}`}
+                    autoComplete="new-password"
+                    required
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  <button
+                    type="button"
+                    className="cc-password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+                </div>
+                <FieldFeedback error={fieldErrors.password} />
+              </div>
+
+              <div className="cc-form-group">
+                <label htmlFor="confirmPassword" className="cc-form-label">
+                  <span>Confirm Password <span className="cc-form-label-required">*</span></span>
+                </label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirm password"
+                  className={`cc-input ${fieldErrors.confirmPassword ? 'cc-input-error' : ''}`}
+                  autoComplete="new-password"
+                  required
+                />
+                <FieldFeedback error={fieldErrors.confirmPassword} />
+              </div>
+            </div>
+          </FormSection>
+        )}
+
+        {/* Stage 3: Professional Profile & Review */}
+        {currentStep === 3 && (
+          <>
+            <FormSection
+              title="Professional Profile"
+              icon={Briefcase}
+              description="Information used for certificate issuance and competency mapping."
+            >
+              <div className="cc-form-group">
+                <label htmlFor="organization" className="cc-form-label">
+                  <span>Verified Organization</span>
+                </label>
+                <input
+                  type="text"
+                  id="organization"
+                  name="organization"
+                  value={formData.organization}
+                  readOnly
+                  placeholder="Verified from Access Key"
+                  className="cc-input"
+                />
+              </div>
+
+              <div className="cc-form-grid-2">
+                <div className="cc-form-group">
+                  <label htmlFor="department" className="cc-form-label">
+                    <span>Department / Section</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    placeholder="e.g. Earth & Environmental Studies"
+                    className="cc-input"
+                  />
+                </div>
+
+                <div className="cc-form-group">
+                  <label htmlFor="designation" className="cc-form-label">
+                    <span>Designation / Role</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="designation"
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleChange}
+                    placeholder="e.g. Junior Research Fellow"
+                    className="cc-input"
+                  />
                 </div>
               </div>
 
-              <div className="input-group">
-                <label htmlFor="confirmPassword" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Confirm Password *</label>
-                <input type={showPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-            </div>
-
-            {/* Section 2: Professional Info */}
-            <div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700 }}>Professional Information</h3>
-              
-              <div className="input-group">
-                <label htmlFor="organization" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization / Institution</label>
-                <input type="text" id="organization" name="organization" value={formData.organization} readOnly placeholder="Verified from Access Key" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-light)', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-              
-              <div className="input-group">
-                <label htmlFor="department" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Department</label>
-                <input type="text" id="department" name="department" value={formData.department} onChange={handleChange} style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="designation" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Designation</label>
-                <input type="text" id="designation" name="designation" value={formData.designation} onChange={handleChange} style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }} />
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="qualification" style={{ fontWeight: 600, fontSize: '0.9rem' }}>Highest Qualification</label>
-                <select id="qualification" name="qualification" value={formData.qualification} onChange={handleChange} style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', width: '100%', minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}>
+              <div className="cc-form-group">
+                <label htmlFor="qualification" className="cc-form-label">
+                  <span>Highest Academic Qualification</span>
+                </label>
+                <select
+                  id="qualification"
+                  name="qualification"
+                  value={formData.qualification}
+                  onChange={handleChange}
+                  className="cc-input cc-select"
+                >
                   <option value="">Select Qualification</option>
                   <option value="bachelors">Bachelor's Degree</option>
                   <option value="masters">Master's Degree</option>
@@ -268,21 +450,73 @@ const Register = () => {
                   <option value="other">Other</option>
                 </select>
               </div>
+            </FormSection>
+
+            {/* Review Summary */}
+            <div className="cc-review-box">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--cc-cyan)', margin: 0 }}>Review Registration</h4>
+                <span style={{ fontSize: '0.78rem', color: 'var(--cc-text-dim)' }}>Confirm details</span>
+              </div>
+
+              <div className="cc-review-item">
+                <span className="cc-review-label">Organization</span>
+                <span className="cc-review-val">{formData.organization || '—'}</span>
+              </div>
+              <div className="cc-review-item">
+                <span className="cc-review-label">Full Name</span>
+                <span className="cc-review-val">{formData.name || '—'}</span>
+              </div>
+              <div className="cc-review-item">
+                <span className="cc-review-label">Email Address</span>
+                <span className="cc-review-val">{formData.email || '—'}</span>
+              </div>
             </div>
+          </>
+        )}
 
-          </div>
+        {/* Step Navigation Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '2rem' }}>
+          {currentStep > 1 ? (
+            <AnimatedActionButton
+              type="button"
+              variant="secondary"
+              onClick={handlePrevStep}
+              disabled={isSubmitting}
+            >
+              <ArrowLeft size={16} /> Back
+            </AnimatedActionButton>
+          ) : (
+            <Link to="/login" className="cc-btn cc-btn-ghost" style={{ fontSize: '0.875rem' }}>
+              Already registered? Sign in
+            </Link>
+          )}
 
-          <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '0.85rem 2rem', minHeight: '48px', fontSize: '1rem', minWidth: 'min(100%, 220px)', width: '100%', maxWidth: '320px', opacity: isSubmitting ? 0.7 : 1 }}>
-              {isSubmitting ? 'Creating Account...' : 'Create Trainee Account'}
-            </button>
-            <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-light)' }}>
-              Already have an account? <Link to="/login" style={{ color: 'var(--secondary)', fontWeight: 600, padding: '0.5rem 0' }}>Sign in here</Link>
-            </p>
-          </div>
-        </form>
-      </div>
-    </div>
+          {currentStep < STEPS.length ? (
+            <AnimatedActionButton
+              type="button"
+              variant="primary"
+              onClick={handleNextStep}
+              icon={ArrowRight}
+            >
+              Continue
+            </AnimatedActionButton>
+          ) : (
+            <AnimatedActionButton
+              type="submit"
+              variant="primary"
+              isLoading={isSubmitting}
+              loadingText="Creating Account..."
+              icon={CheckCircle}
+              style={{ minWidth: '220px' }}
+            >
+              Create Trainee Account
+            </AnimatedActionButton>
+          )}
+        </div>
+
+      </form>
+    </AuthPageShell>
   );
 };
 

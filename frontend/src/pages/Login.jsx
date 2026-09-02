@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Eye, EyeOff, LogIn, UserCheck, Shield, GraduationCap, Building2 } from 'lucide-react';
+import { AuthPageShell } from '../components/auth/AuthPageShell';
+import { FormSection } from '../components/auth/FormSection';
+import { AnimatedActionButton } from '../components/auth/AnimatedActionButton';
+import { FormAlertBanner } from '../components/auth/FieldFeedback';
 
 const Login = () => {
   const [role, setRole] = useState('Trainee');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [accessKey, setAccessKey] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -16,150 +23,199 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
-    if (!email || !password) {
-      setError('Please fill in email and password');
+    if (!email.trim() || !password) {
+      setError('Please fill in both email and password.');
       return;
     }
 
-    if ((role === 'Trainee' || role === 'Trainer') && !accessKey) {
-      setError(`Please enter your Organization ${role} Access Key`);
+    if ((role === 'Trainee' || role === 'Trainer') && !accessKey.trim()) {
+      setError(`Please enter your Organization ${role} Access Key.`);
       return;
     }
 
     setIsSubmitting(true);
-    const result = await login(email, password, role, accessKey);
-    setIsSubmitting(false);
-
-    if (result.success) {
-      if (result.role === 'Admin') {
-        navigate('/admin/dashboard');
-      } else if (result.role === 'Trainer') {
-        navigate('/trainer/dashboard');
+    try {
+      const result = await login(email.trim(), password, role, accessKey.trim());
+      if (result.success) {
+        if (result.role === 'Admin') {
+          navigate('/admin/dashboard');
+        } else if (result.role === 'Trainer') {
+          navigate('/trainer/dashboard');
+        } else {
+          navigate('/trainee/dashboard');
+        }
       } else {
-        navigate('/trainee/dashboard');
+        setError(result.message || 'Authentication failed. Please check your credentials.');
       }
-    } else {
-      setError(result.message || 'Login failed');
+    } catch (err) {
+      setError(err?.message || 'Login request failed.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100dvh', backgroundColor: 'var(--bg-color)', alignItems: 'center', justifyContent: 'center', padding: '1rem', boxSizing: 'border-box' }}>
-      <div className="card" style={{ maxWidth: '450px', width: '100%', padding: '2.5rem 1.5rem', boxSizing: 'border-box' }}>
-        
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'inline-block' }}>
-            <div style={{ width: '64px', height: '64px', backgroundColor: 'var(--primary)', color: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', margin: '0 auto 1rem' }}>
-              CC
+    <AuthPageShell
+      illustrationType="login"
+      activeRole={role}
+      title="Welcome Back"
+      subtitle="Access your Capacity Connect ecosystem gateway"
+      reverseLayout
+    >
+      <FormAlertBanner error={error} />
+
+      <form onSubmit={handleSubmit} noValidate>
+        <FormSection
+          title="Sign In Gateway"
+          icon={LogIn}
+          description="Select your portal role and authenticate with your account credentials."
+        >
+          {/* Accessible Role Selector Tabs */}
+          <div className="cc-form-group">
+            <label className="cc-form-label">
+              <span>Account Role <span className="cc-form-label-required">*</span></span>
+            </label>
+            <div className="cc-role-selector" role="radiogroup" aria-label="Portal Role">
+              {[
+                { id: 'Trainee', label: 'Trainee', icon: GraduationCap },
+                { id: 'Trainer', label: 'Trainer', icon: UserCheck },
+                { id: 'Admin', label: 'Admin', icon: Shield }
+              ].map((r) => {
+                const IconComp = r.icon;
+                const isSelected = role === r.id;
+                return (
+                  <button
+                    type="button"
+                    key={r.id}
+                    className={`cc-role-btn ${isSelected ? 'active' : ''}`}
+                    onClick={() => {
+                      setRole(r.id);
+                      setAccessKey('');
+                      setError('');
+                    }}
+                    role="radio"
+                    aria-checked={isSelected}
+                  >
+                    <IconComp size={18} style={{ marginBottom: '4px' }} />
+                    <span>{r.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.25rem' }}>Capacity Connect</h1>
-          </Link>
-          <p style={{ color: 'var(--text-light)', fontSize: '0.95rem' }}>Digital Capacity Building & LMS</p>
-        </div>
-
-        {error && (
-          <div style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <label style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>I am logging in as a:</label>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {['Trainee', 'Trainer', 'Admin'].map(r => (
-                <button
-                  type="button"
-                  key={r}
-                  onClick={() => { setRole(r); setAccessKey(''); }}
-                  style={{
-                    flex: 1,
-                    minWidth: '90px',
-                    minHeight: '44px',
-                    padding: '0.65rem 0.5rem',
-                    borderRadius: '6px',
-                    border: `1px solid ${role === r ? 'var(--primary)' : 'var(--border-color)'}`,
-                    backgroundColor: role === r ? 'var(--primary)' : 'var(--white)',
-                    color: role === r ? 'var(--white)' : 'var(--text-dark)',
-                    fontWeight: role === r ? 600 : 400,
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
           </div>
 
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Email Address</label>
-            <input 
-              type="email" 
-              value={email} 
+          {/* Email Address Field */}
+          <div className="cc-form-group">
+            <label htmlFor="login-email" className="cc-form-label">
+              <span>Email Address <span className="cc-form-label-required">*</span></span>
+            </label>
+            <input
+              type="email"
+              id="login-email"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}
-            />
-          </div>
-          
-          <div className="input-group" style={{ marginBottom: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-              <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Password</label>
-              <a href="#" style={{ fontSize: '0.85rem', color: 'var(--secondary)', padding: '0.25rem 0' }}>Forgot Password?</a>
-            </div>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}
+              placeholder="name@organization.com"
+              className="cc-input"
+              autoComplete="email"
+              required
             />
           </div>
 
-          {role !== 'Admin' && (
-            <div className="input-group" style={{ marginBottom: 0 }}>
-              <label style={{ fontWeight: 600, fontSize: '0.9rem' }}>Organization Access Key ({role})</label>
-              <input 
-                type="text" 
-                value={accessKey} 
-                onChange={(e) => setAccessKey(e.target.value)}
-                placeholder={`Enter your ${role} access key`}
-                style={{ minHeight: '44px', fontSize: '16px', boxSizing: 'border-box' }}
+          {/* Password Field */}
+          <div className="cc-form-group">
+            <div className="cc-form-label">
+              <span>Password <span className="cc-form-label-required">*</span></span>
+              <a href="#" onClick={(e) => e.preventDefault()} style={{ fontSize: '0.8rem', color: 'var(--cc-cyan)', fontWeight: 600 }}>
+                Forgot Password?
+              </a>
+            </div>
+            <div className="cc-password-wrapper">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="login-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter account password"
+                className="cc-input"
+                autoComplete="current-password"
+                required
               />
+              <button
+                type="button"
+                className="cc-password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Conditional Organization Access Key Field */}
+          {role !== 'Admin' && (
+            <div className="cc-form-group">
+              <label htmlFor="login-access-key" className="cc-form-label">
+                <span>Organization Access Key ({role}) <span className="cc-form-label-required">*</span></span>
+              </label>
+              <input
+                type="text"
+                id="login-access-key"
+                value={accessKey}
+                onChange={(e) => setAccessKey(e.target.value)}
+                placeholder={`e.g. CC-${role === 'Trainee' ? 'TRN' : 'TNR'}-XXXXXX`}
+                className="cc-input"
+                autoComplete="off"
+                required
+              />
+              <span className="cc-field-helper">Enter the key provided by your organization administrator.</span>
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minHeight: '44px' }}>
-            <input type="checkbox" id="remember" style={{ width: '18px', height: '18px' }} />
-            <label htmlFor="remember" style={{ fontSize: '0.9rem', color: 'var(--text-dark)', cursor: 'pointer' }}>Remember me</label>
+          {/* Remember Me Checkbox */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1rem 0' }}>
+            <input type="checkbox" id="remember" style={{ width: '18px', height: '18px', accentColor: 'var(--cc-cyan)', cursor: 'pointer' }} />
+            <label htmlFor="remember" style={{ fontSize: '0.875rem', color: 'var(--cc-text-muted)', cursor: 'pointer' }}>
+              Remember this device
+            </label>
           </div>
 
-          <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ width: '100%', minHeight: '48px', padding: '0.75rem', fontSize: '1rem', marginTop: '0.5rem', opacity: isSubmitting ? 0.7 : 1 }}>
-            {isSubmitting ? 'Signing In...' : 'Sign In'}
-          </button>
-        </form>
+          {/* Primary Action Button */}
+          <AnimatedActionButton
+            type="submit"
+            variant="primary"
+            fullWidth
+            isLoading={isSubmitting}
+            loadingText="Signing In..."
+            icon={LogIn}
+            style={{ marginTop: '0.5rem', minHeight: '50px', fontSize: '1rem' }}
+          >
+            Sign In
+          </AnimatedActionButton>
+        </FormSection>
 
-        <div style={{ marginTop: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ borderTop: '1px solid var(--border-color)', position: 'relative' }}>
-            <span style={{ backgroundColor: 'var(--white)', padding: '0 1rem', color: 'var(--text-light)', fontSize: '0.85rem', position: 'relative', top: '-10px' }}>or</span>
+        {/* Secondary Portal Routes */}
+        <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--cc-text-dim)', fontSize: '0.825rem' }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--cc-border)' }} />
+            <span>Need an account?</span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--cc-border)' }} />
           </div>
-          
-          <Link to="/register" className="btn btn-secondary" style={{ width: '100%', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Create Trainee Account
-          </Link>
-          <Link to="/trainer/apply" className="btn btn-outline" style={{ width: '100%', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Apply as Trainer
-          </Link>
-          <Link to="/admin/register" style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600, marginTop: '0.5rem', minHeight: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            Register Organization as Admin
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <Link to="/register" className="cc-btn cc-btn-secondary" style={{ minHeight: '44px', fontSize: '0.875rem' }}>
+              <GraduationCap size={16} /> Register Trainee
+            </Link>
+            <Link to="/trainer/apply" className="cc-btn cc-btn-outline" style={{ minHeight: '44px', fontSize: '0.875rem' }}>
+              <UserCheck size={16} /> Apply as Trainer
+            </Link>
+          </div>
+
+          <Link to="/admin/register" style={{ fontSize: '0.875rem', color: 'var(--cc-text)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginTop: '0.5rem', padding: '0.5rem' }}>
+            <Building2 size={16} /> Register Organization as Admin
           </Link>
         </div>
-
-      </div>
-    </div>
+      </form>
+    </AuthPageShell>
   );
 };
 

@@ -379,70 +379,180 @@
   margin-left: 0.2rem;
 }
 
-/* Form Control Inputs (Matte Fill) */
-.cc-input {
+/* ==========================================================================
+   FORM CONTROLS & THEME ADAPTABILITY (DARK & LIGHT MODES)
+   ========================================================================== */
+
+/* DARK MODE FORM CONTROLS (Default or data-theme="dark") */
+.cc-auth-page:not([data-theme="light"]) .cc-input,
+.cc-auth-page:not([data-theme="light"]) input[type="text"],
+.cc-auth-page:not([data-theme="light"]) input[type="email"],
+.cc-auth-page:not([data-theme="light"]) input[type="password"],
+.cc-auth-page:not([data-theme="light"]) input[type="number"],
+.cc-auth-page:not([data-theme="light"]) input[type="date"],
+.cc-auth-page:not([data-theme="light"]) input[type="tel"],
+.cc-auth-page:not([data-theme="light"]) input[type="url"],
+.cc-auth-page:not([data-theme="light"]) input[type="search"],
+.cc-auth-page:not([data-theme="light"]) select,
+.cc-auth-page:not([data-theme="light"]) textarea,
+.cc-auth-page:not([data-theme="light"]) .form-control,
+.cc-auth-page:not([data-theme="light"]) .form-input,
+.cc-auth-page:not([data-theme="light"]) .input {
   width: 100%;
   min-height: 46px;
   padding: 0.7rem 1rem;
   border-radius: var(--cc-radius-sm);
   border: 1px solid var(--cc-border);
   background-color: var(--cc-bg-surface);
-  color: var(--cc-text);
+  color: var(--cc-text) !important;
   font-family: inherit;
-  font-size: 1rem; /* 16px min prevents iOS zoom */
+  font-size: 1rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   box-sizing: border-box;
 }
 
-.cc-input::placeholder {
-  color: var(--cc-text-dim);
-  opacity: 0.8;
+.cc-auth-page:not([data-theme="light"]) ::placeholder {
+  color: var(--cc-text-muted) !important;
+  opacity: 0.75;
 }
 
-.cc-input:hover:not(:disabled):not([readonly]) {
+.cc-auth-page:not([data-theme="light"]) .cc-input:hover:not(:disabled):not([readonly]),
+.cc-auth-page:not([data-theme="light"]) input:hover:not(:disabled):not([readonly]),
+.cc-auth-page:not([data-theme="light"]) select:hover:not(:disabled):not([readonly]),
+.cc-auth-page:not([data-theme="light"]) textarea:hover:not(:disabled):not([readonly]) {
   border-color: var(--cc-border-hover);
 }
 
-.cc-input:focus-visible {
-  border-color: var(--cc-cyan);
-  box-shadow: 0 0 0 2px var(--cc-cyan);
+.cc-auth-page:not([data-theme="light"]) .cc-input:focus,
+.cc-auth-page:not([data-theme="light"]) .cc-input:focus-visible,
+.cc-auth-page:not([data-theme="light"]) input:focus,
+.cc-auth-page:not([data-theme="light"]) input:focus-visible,
+.cc-auth-page:not([data-theme="light"]) select:focus,
+.cc-auth-page:not([data-theme="light"]) select:focus-visible,
+.cc-auth-page:not([data-theme="light"]) textarea:focus,
+.cc-auth-page:not([data-theme="light"]) textarea:focus-visible {
+  border-color: var(--cc-cyan) !important;
+  box-shadow: 0 0 0 2px var(--cc-cyan) !important;
   background-color: var(--cc-bg-elevated);
+  color: var(--cc-text) !important;
 }
 
-.cc-input:disabled,
-.cc-input[readonly] {
-  background-color: var(--cc-bg-surface);
-  color: var(--cc-text-dim);
+.cc-auth-page:not([data-theme="light"]) .cc-input:disabled,
+.cc-auth-page:not([data-theme="light"]) .cc-input[readonly],
+.cc-auth-page:not([data-theme="light"]) input:disabled,
+.cc-auth-page:not([data-theme="light"]) input[readonly],
+.cc-auth-page:not([data-theme="light"]) select:disabled,
+.cc-auth-page:not([data-theme="light"]) textarea:disabled,
+.cc-auth-page:not([data-theme="light"]) textarea[readonly] {
+  background-color: var(--cc-bg-elevated) !important;
+  color: var(--cc-text-muted) !important;
   cursor: not-allowed;
-  border-color: var(--cc-border);
+  border-color: var(--cc-border) !important;
+  opacity: 0.85;
 }
 
-.cc-input-error {
-  border-color: var(--cc-danger) !important;
+.cc-auth-page:not([data-theme="light"]) select option {
+  background-color: var(--cc-bg-elevated) !important;
+  color: var(--cc-text) !important;
 }
 
-.cc-input-error:focus-visible {
-  box-shadow: 0 0 0 2px var(--cc-danger) !important;
+/* Chrome Autofill fix for Dark Mode */
+.cc-auth-page:not([data-theme="light"]) input:-webkit-autofill,
+.cc-auth-page:not([data-theme="light"]) input:-webkit-autofill:hover,
+.cc-auth-page:not([data-theme="light"]) input:-webkit-autofill:focus,
+.cc-auth-page:not([data-theme="light"]) textarea:-webkit-autofill,
+.cc-auth-page:not([data-theme="light"]) select:-webkit-autofill {
+  -webkit-text-fill-color: var(--cc-text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--cc-bg-surface) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--cc-text) !important;
 }
 
-.cc-input-success {
-  border-color: var(--cc-emerald) !important;
+/* LIGHT MODE FORM CONTROLS (data-theme="light") */
+.cc-auth-page[data-theme="light"] .cc-input,
+.cc-auth-page[data-theme="light"] input[type="text"],
+.cc-auth-page[data-theme="light"] input[type="email"],
+.cc-auth-page[data-theme="light"] input[type="password"],
+.cc-auth-page[data-theme="light"] input[type="number"],
+.cc-auth-page[data-theme="light"] input[type="date"],
+.cc-auth-page[data-theme="light"] input[type="tel"],
+.cc-auth-page[data-theme="light"] input[type="url"],
+.cc-auth-page[data-theme="light"] input[type="search"],
+.cc-auth-page[data-theme="light"] select,
+.cc-auth-page[data-theme="light"] textarea,
+.cc-auth-page[data-theme="light"] .form-control,
+.cc-auth-page[data-theme="light"] .form-input,
+.cc-auth-page[data-theme="light"] .input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.7rem 1rem;
+  border-radius: var(--cc-radius-sm);
+  border: 1px solid var(--cc-border);
+  background-color: var(--cc-bg-elevated) !important;
+  color: var(--cc-text) !important;
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-sizing: border-box;
 }
 
-/* Select Control */
-.cc-select {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.85rem center;
-  background-size: 16px;
-  padding-right: 2.5rem;
+.cc-auth-page[data-theme="light"] ::placeholder {
+  color: var(--cc-text-muted) !important;
+  opacity: 0.75;
 }
 
-.cc-select option {
-  background-color: var(--cc-bg-elevated);
-  color: var(--cc-text);
+.cc-auth-page[data-theme="light"] .cc-input:hover:not(:disabled):not([readonly]),
+.cc-auth-page[data-theme="light"] input:hover:not(:disabled):not([readonly]),
+.cc-auth-page[data-theme="light"] select:hover:not(:disabled):not([readonly]),
+.cc-auth-page[data-theme="light"] textarea:hover:not(:disabled):not([readonly]) {
+  border-color: var(--cc-border-hover);
+}
+
+.cc-auth-page[data-theme="light"] .cc-input:focus,
+.cc-auth-page[data-theme="light"] .cc-input:focus-visible,
+.cc-auth-page[data-theme="light"] input:focus,
+.cc-auth-page[data-theme="light"] input:focus-visible,
+.cc-auth-page[data-theme="light"] select:focus,
+.cc-auth-page[data-theme="light"] select:focus-visible,
+.cc-auth-page[data-theme="light"] textarea:focus,
+.cc-auth-page[data-theme="light"] textarea:focus-visible {
+  border-color: var(--cc-cyan) !important;
+  box-shadow: 0 0 0 2px var(--cc-cyan-glow) !important;
+  background-color: #FFFFFF !important;
+  color: var(--cc-text) !important;
+}
+
+.cc-auth-page[data-theme="light"] .cc-input:disabled,
+.cc-auth-page[data-theme="light"] .cc-input[readonly],
+.cc-auth-page[data-theme="light"] input:disabled,
+.cc-auth-page[data-theme="light"] input[readonly],
+.cc-auth-page[data-theme="light"] select:disabled,
+.cc-auth-page[data-theme="light"] textarea:disabled,
+.cc-auth-page[data-theme="light"] textarea[readonly] {
+  background-color: var(--cc-bg-surface) !important;
+  color: var(--cc-text-muted) !important;
+  cursor: not-allowed;
+  border-color: var(--cc-border) !important;
+  opacity: 0.85;
+}
+
+.cc-auth-page[data-theme="light"] select option {
+  background-color: #FFFFFF !important;
+  color: var(--cc-text) !important;
+}
+
+/* Chrome Autofill fix for Light Mode */
+.cc-auth-page[data-theme="light"] input:-webkit-autofill,
+.cc-auth-page[data-theme="light"] input:-webkit-autofill:hover,
+.cc-auth-page[data-theme="light"] input:-webkit-autofill:focus,
+.cc-auth-page[data-theme="light"] textarea:-webkit-autofill,
+.cc-auth-page[data-theme="light"] select:-webkit-autofill {
+  -webkit-text-fill-color: var(--cc-text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px #FFFFFF inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--cc-text) !important;
 }
 
 /* Password Toggle Wrapper */

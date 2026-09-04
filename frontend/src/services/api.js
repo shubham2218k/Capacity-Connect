@@ -664,14 +664,15 @@ const backendFetch = async (endpoint, options) => {
 };
 
 const request = async (method, endpoint, body, isFormData = false) => {
+  const isFD = isFormData || (typeof FormData !== 'undefined' && body instanceof FormData);
   const token = getAuthToken();
   const headers = {};
-  if (!isFormData) headers['Content-Type'] = 'application/json';
+  if (!isFD) headers['Content-Type'] = 'application/json';
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const options = { method, headers };
   if (body !== undefined && body !== null) {
-    options.body = isFormData ? body : JSON.stringify(body);
+    options.body = isFD ? body : JSON.stringify(body);
   }
 
   // ── DEMO MODE ──────────────────────────────────────────────────────────────

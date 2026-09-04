@@ -28,6 +28,7 @@ const TrainerApplication = () => {
     password: '',
     confirmPassword: '',
     organization: '',
+    organizationId: '',
     department: '',
     designation: '',
     employeeId: '',
@@ -46,6 +47,7 @@ const TrainerApplication = () => {
   const [keyValidating, setKeyValidating] = useState(false);
   const [keyError, setKeyError] = useState('');
   const [orgDetected, setOrgDetected] = useState(null);
+  const [verifiedAccessKey, setVerifiedAccessKey] = useState('');
 
   // Document Upload File States
   const [qualificationFile, setQualificationFile] = useState(null);
@@ -59,8 +61,9 @@ const TrainerApplication = () => {
 
     if (!key) {
       setOrgDetected(null);
+      setVerifiedAccessKey('');
       setKeyError('');
-      setFormData((prev) => ({ ...prev, organization: '' }));
+      setFormData((prev) => ({ ...prev, organization: '', organizationId: '' }));
       return { ok: false, message: 'Please enter your Organization Trainer Access Key.' };
     }
 
@@ -70,21 +73,30 @@ const TrainerApplication = () => {
     try {
       const response = await api.post('/auth/validate-key', { key, type: 'Trainer' });
       const organizationName = response?.data?.organizationName || null;
+      const organizationId = response?.data?.organizationId || null;
 
       if (!organizationName) {
         setOrgDetected(null);
-        setFormData((prev) => ({ ...prev, organization: '' }));
+        setVerifiedAccessKey('');
+        setFormData((prev) => ({ ...prev, organization: '', organizationId: '' }));
         setKeyError('Invalid organization access key.');
         return { ok: false, message: 'Invalid organization access key.' };
       }
 
       setOrgDetected(organizationName);
-      setFormData((prev) => ({ ...prev, organization: organizationName }));
-      return { ok: true, organizationName };
+      setVerifiedAccessKey(key);
+      setFormData((prev) => ({
+        ...prev,
+        accessKey: key,
+        organization: organizationName,
+        organizationId: organizationId || prev.organizationId
+      }));
+      return { ok: true, organizationName, organizationId };
     } catch (err) {
       const message = err?.message || 'Invalid organization access key.';
       setOrgDetected(null);
-      setFormData((prev) => ({ ...prev, organization: '' }));
+      setVerifiedAccessKey('');
+      setFormData((prev) => ({ ...prev, organization: '', organizationId: '' }));
       setKeyError(message);
       return { ok: false, message };
     } finally {
@@ -96,18 +108,30 @@ const TrainerApplication = () => {
     const key = formData.accessKey.trim();
     if (!key) return undefined;
 
+    // Only auto-verify if key changed from previously verified key
+    if (verifiedAccessKey && key === verifiedAccessKey) return undefined;
+
     const timer = setTimeout(() => {
       verifyKey(key);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [formData.accessKey, verifyKey]);
+  }, [formData.accessKey, verifiedAccessKey, verifyKey]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'accessKey' && !value.trim()) {
-      setOrgDetected(null);
-      setKeyError('');
+    if (name === 'accessKey') {
+      const trimmed = value.trim();
+      if (trimmed !== verifiedAccessKey) {
+        setOrgDetected(null);
+        setVerifiedAccessKey('');
+        setKeyError('');
+        setFormData((prev) => ({ ...prev, accessKey: value, organization: '', organizationId: '' }));
+        if (fieldErrors.accessKey) {
+          setFieldErrors((prev) => ({ ...prev, accessKey: '' }));
+        }
+        return;
+      }
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (fieldErrors[name]) {
@@ -200,20 +224,31 @@ const TrainerApplication = () => {
       return;
     }
 
+    const currentKey = formData.accessKey.trim();
+    if (!currentKey) {
+      setError('Please verify your organization access key again.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       let organizationName = orgDetected;
-      if (!organizationName) {
-        const result = await verifyKey(formData.accessKey);
-        if (!result.ok) {
-          setError(result.message);
+      let organizationId = formData.organizationId;
+      if (!organizationName || !verifiedAccessKey || currentKey !== verifiedAccessKey) {
+        const result = await verifyKey(currentKey);
+        if (!result.ok || !result.organizationName) {
+          setError(result.message || 'Please verify your organization access key again.');
           return;
         }
         organizationName = result.organizationName;
+        organizationId = result.organizationId;
       }
 
       const fd = new FormData();
-      fd.append('trainerAccessKey', formData.accessKey.trim());
+      fd.append('trainerAccessKey', currentKey);
+      fd.append('accessKey', currentKey);
+      if (organizationId) fd.append('organizationId', organizationId);
+      if (organizationName) fd.append('organizationName', organizationName);
       fd.append('name', formData.fullName);
       fd.append('email', formData.email);
       fd.append('password', formData.password);
@@ -225,6 +260,7 @@ const TrainerApplication = () => {
       fd.append('institution', formData.institution);
       fd.append('experienceYears', formData.experienceYears);
       fd.append('bio', formData.bio);
+      fd.append('expertise', skills.join(', '));
       fd.append('expertiseAreas', skills.join(', '));
 
       if (qualificationFile) fd.append('qualificationDoc', qualificationFile);

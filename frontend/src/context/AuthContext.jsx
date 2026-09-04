@@ -92,7 +92,9 @@ export const AuthProvider = ({ children }) => {
   // Trainers are created with a "pending" status and get no session.
   const applyAsTrainer = async (applicationData) => {
     try {
-      const response = await api.post('/auth/trainer-apply', applicationData);
+      const response = (typeof FormData !== 'undefined' && applicationData instanceof FormData)
+        ? await api.postFormData('/auth/trainer-apply', applicationData)
+        : await api.post('/auth/trainer-apply', applicationData);
       if (response.success) {
         return { success: true, message: response.message };
       }

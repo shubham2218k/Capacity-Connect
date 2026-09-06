@@ -263,9 +263,9 @@ const TrainerApplication = () => {
       fd.append('expertise', skills.join(', '));
       fd.append('expertiseAreas', skills.join(', '));
 
-      if (qualificationFile) fd.append('qualificationDoc', qualificationFile);
-      if (experienceFile) fd.append('experienceDoc', experienceFile);
-      if (identityFile) fd.append('identityDoc', identityFile);
+      if (qualificationFile) fd.append('qualificationProof', qualificationFile);
+      if (experienceFile) fd.append('experienceProof', experienceFile);
+      if (identityFile) fd.append('identityProof', identityFile);
 
       const result = await applyAsTrainer(fd);
 

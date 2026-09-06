@@ -67,6 +67,19 @@ app.use((err, req, res, next) => {
     });
   }
 
+  if (err.name === 'MulterError' || err.code === 'LIMIT_UNEXPECTED_FILE') {
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        message: `Unexpected upload field: ${err.field}`
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'File upload error.'
+    });
+  }
+
   return res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Something went wrong on the server.'

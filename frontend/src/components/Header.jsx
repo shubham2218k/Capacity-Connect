@@ -96,6 +96,24 @@ const Header = ({ toggleSidebar }) => {
         >
           <Menu size={24} />
         </button>
+
+        {(user?.isDemo || user?.organizationName?.includes('Demo')) && (
+          <div style={{ 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '0.45rem', 
+            padding: '0.35rem 0.75rem', 
+            borderRadius: '20px', 
+            backgroundColor: '#fffbe8', 
+            border: '1px solid #ffe58f', 
+            color: '#855900', 
+            fontSize: '0.78rem', 
+            fontWeight: 600 
+          }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#eab308' }} />
+            Demo Environment
+          </div>
+        )}
       </div>
 
       {/* Right Side Icons & Profile */}

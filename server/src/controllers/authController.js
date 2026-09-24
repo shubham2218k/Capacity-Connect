@@ -501,19 +501,186 @@ const login = async (req, res) => {
   return res.json({ success: true, data: authPayload(user, extra) });
 };
 
-// GET /api/auth/me
-const me = async (req, res) => {
-  const extra = {};
+// POST /api/auth/demo-login { role: 'Trainee' | 'Trainer' | 'Admin' }
+const demoLogin = async (req, res) => {
+  const requestedRole = req.body.role || 'Trainee';
+  const role = ['Admin', 'Trainer', 'Trainee'].includes(requestedRole) ? requestedRole : 'Trainee';
 
-  if (req.user.role === 'Admin' && req.user.organizationId) {
-    const organization = await Organization.findById(req.user.organizationId);
-    if (organization) {
-      extra.traineeKey = organization.traineeAccessKey;
-      extra.trainerKey = organization.trainerAccessKey;
-    }
+  // 1. Ensure Demo Organization exists
+  let org = await Organization.findOne({ officialEmail: 'demo.admin@moes.gov.in' });
+  if (!org) {
+    org = await Organization.findOne({ name: 'Ministry of Earth Sciences (Demo)' });
   }
 
-  return res.json({ success: true, data: { ...authPayload(req.user, extra) } });
+  if (!org) {
+    org = await Organization.create({
+      name: 'Ministry of Earth Sciences (Demo)',
+      organizationType: 'Government',
+      officialEmail: 'demo.admin@moes.gov.in',
+      phone: '+91-11-2436-3800',
+      address: '12-14 Mahadev Road, Prithvi Bhavan',
+      city: 'New Delhi',
+      state: 'Delhi',
+      country: 'India',
+      traineeAccessKey: 'CC-TRN-DEMO1',
+      trainerAccessKey: 'CC-TNR-DEMO1'
+    });
+  }
+
+  // 2. Ensure Demo Users exist
+  let admin = await User.findOne({ email: 'demo.admin@moes.gov.in' });
+  if (!admin) {
+    admin = await User.create({
+      name: 'Demo Administrator',
+      email: 'demo.admin@moes.gov.in',
+      password: 'demopassword123',
+      phone: '+91 90000 00000',
+      role: 'Admin',
+      status: 'active',
+      organizationId: org._id,
+      organizationName: org.name,
+      department: 'Administration'
+    });
+    org.createdBy = admin._id;
+    await org.save();
+  }
+
+  let trainer = await User.findOne({ email: 'demo.trainer@moes.gov.in' });
+  if (!trainer) {
+    trainer = await User.create({
+      name: 'Dr. Ananya Krishnan (Demo)',
+      email: 'demo.trainer@moes.gov.in',
+      password: 'demopassword123',
+      phone: '+91 98765 11111',
+      role: 'Trainer',
+      status: 'active',
+      organizationId: org._id,
+      organizationName: org.name,
+      department: 'Oceanography',
+      designation: 'Senior Scientist',
+      qualification: 'Ph.D. in Marine Sciences',
+      expertise: ['Marine Biology', 'Data Analytics', 'GIS'],
+      experience: '5-10',
+      professionalBio: 'Senior scientist specialising in marine ecology and data-driven research.'
+    });
+  }
+
+  let trainee = await User.findOne({ email: 'demo.trainee@moes.gov.in' });
+  if (!trainee) {
+    trainee = await User.create({
+      name: 'Anita Trainee (Demo)',
+      email: 'demo.trainee@moes.gov.in',
+      password: 'demopassword123',
+      phone: '+91 99000 22222',
+      role: 'Trainee',
+      status: 'active',
+      organizationId: org._id,
+      organizationName: org.name,
+      department: 'Climate Research',
+      designation: 'Research Analyst',
+      qualification: 'M.Sc. Environmental Science'
+    });
+  }
+
+  // 3. Ensure Demo Courses & Announcements exist
+  const Course = require('../models/Course');
+  const Announcement = require('../models/Announcement');
+
+  const courseCount = await Course.countDocuments({ organization: org._id });
+  if (courseCount === 0) {
+    await Course.create({
+      title: 'Introduction to Marine Biology',
+      shortDescription: 'An overview of marine ecosystems and biodiversity.',
+      description: 'This course covers the fundamentals of marine biology including ocean zones, marine organisms, and ecosystem dynamics.',
+      category: 'Biology',
+      difficulty: 'Beginner',
+      estimatedDuration: '8 hours',
+      learningObjectives: ['Understand ocean zones', 'Identify key marine organisms', 'Explain ecosystem dynamics'],
+      skills: ['Marine Biology', 'Research', 'Data Analysis'],
+      trainer: trainer._id,
+      organization: org._id,
+      status: 'published',
+      publishedAt: new Date(),
+      modules: [
+        {
+          title: 'Ocean Zones & Ecosystems',
+          description: 'Overview of ocean depth zones.',
+          order: 1,
+          lessons: [
+            {
+              title: 'Introduction to Ocean Zones',
+              description: 'The five major ocean zones and their characteristics.',
+              type: 'link',
+              externalUrl: 'https://oceanservice.noaa.gov/facts/oceanzones.html',
+              order: 1
+            }
+          ]
+        }
+      ]
+    });
+
+    await Course.create({
+      title: 'GIS & Remote Sensing Fundamentals',
+      shortDescription: 'Practical introduction to geographic information systems.',
+      description: 'Learn the basics of GIS data collection, analysis, and remote sensing technology for environmental monitoring.',
+      category: 'Technology',
+      difficulty: 'Intermediate',
+      estimatedDuration: '12 hours',
+      learningObjectives: ['Set up a GIS project', 'Interpret satellite imagery', 'Perform spatial analysis'],
+      skills: ['GIS', 'Remote Sensing', 'Data Analysis'],
+      trainer: trainer._id,
+      organization: org._id,
+      status: 'published',
+      publishedAt: new Date(),
+      modules: [
+        {
+          title: 'GIS Fundamentals',
+          description: 'Core concepts and tools.',
+          order: 1,
+          lessons: [
+            {
+              title: 'What is GIS?',
+              type: 'link',
+              externalUrl: 'https://www.esri.com/en-us/what-is-gis/overview',
+              order: 1
+            }
+          ]
+        }
+      ]
+    });
+  }
+
+  const annCount = await Announcement.countDocuments({ organization: org._id });
+  if (annCount === 0) {
+    await Announcement.create({
+      organization: org._id,
+      organizationName: org.name,
+      createdBy: admin._id,
+      createdByName: admin.name,
+      title: 'Demo Environment Active',
+      message: 'Welcome to the Capacity Connect Demo Environment! You are viewing sample organizational data.',
+      audience: 'all',
+      type: 'important',
+      priority: 'Important'
+    });
+  }
+
+  // Select target user by role
+  const targetUser = role === 'Admin' ? admin : role === 'Trainer' ? trainer : trainee;
+
+  const extra = { isDemo: true };
+  if (role === 'Admin') {
+    extra.traineeKey = org.traineeAccessKey;
+    extra.trainerKey = org.trainerAccessKey;
+    extra.traineeAccessKey = org.traineeAccessKey;
+    extra.trainerAccessKey = org.trainerAccessKey;
+  }
+
+  return res.json({
+    success: true,
+    message: `Signed in as Demo ${role}`,
+    data: authPayload(targetUser, extra)
+  });
 };
 
-module.exports = { adminRegister, traineeRegister, trainerApply, trainerResubmit, validateKey, login, me };
+module.exports = { adminRegister, traineeRegister, trainerApply, trainerResubmit, validateKey, login, me, demoLogin };

@@ -10,40 +10,67 @@ const STORAGE_KEY = 'capacityConnect_user';
 const messageOf = (error, fallback) => error?.message || (typeof error === 'string' ? error : fallback);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem(STORAGE_KEY);
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        return JSON.parse(storedUser);
+      } catch (e) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Restore and validate session on initial mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem(STORAGE_KEY);
+    let parsedUser = null;
+    if (storedUser) {
+      try {
+        parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
-    setLoading(false);
-  }, []);
 
-  // Refresh the stored profile in the background when a backend is reachable.
-  // A failure here is never allowed to sign the user out.
-  useEffect(() => {
-    if (loading || !user?.token) return;
+    if (!parsedUser || !parsedUser.token) {
+      setLoading(false);
+      return;
+    }
 
-    let cancelled = false;
+    let isMounted = true;
+
+    // Verify token validity with backend if token exists
     api.get('/auth/me')
       .then((response) => {
-        if (cancelled || !response?.success || !response.data) return;
-        const merged = { ...user, ...response.data, token: user.token };
-        setUser(merged);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        if (!isMounted) return;
+        if (response?.success && response.data) {
+          const merged = { ...parsedUser, ...response.data, token: parsedUser.token, isDemo: response.data.isDemo || parsedUser.isDemo };
+          setUser(merged);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        }
       })
-      .catch(() => { /* keep the existing session as-is */ });
+      .catch((err) => {
+        if (!isMounted) return;
+        // Only clear session if backend explicitly rejected auth (401 token invalid/expired)
+        if (err?.status === 401) {
+          setUser(null);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        // On network errors or offline mode, keep storedUser as valid session fallback
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
-    return () => { cancelled = true; };
-    // Runs once per app load, after the stored session has been read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const persist = (data) => {
     setUser(data);
@@ -60,6 +87,19 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: response.message || 'Login failed' };
     } catch (error) {
       return { success: false, message: messageOf(error, 'Login failed') };
+    }
+  };
+
+  const demoLogin = async (role) => {
+    try {
+      const response = await api.post('/auth/demo-login', { role });
+      if (response.success && response.data) {
+        persist(response.data);
+        return { success: true, role: response.data.role };
+      }
+      return { success: false, message: response.message || 'Demo access failed' };
+    } catch (error) {
+      return { success: false, message: messageOf(error, 'Demo access failed') };
     }
   };
 
@@ -89,7 +129,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Trainers are created with a "pending" status and get no session.
   const applyAsTrainer = async (applicationData) => {
     try {
       const response = (typeof FormData !== 'undefined' && applicationData instanceof FormData)
@@ -112,6 +151,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
+    demoLogin,
     register,
     registerAdmin,
     applyAsTrainer,
@@ -121,7 +161,8 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
+

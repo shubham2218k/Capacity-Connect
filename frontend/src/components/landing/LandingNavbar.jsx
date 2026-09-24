@@ -1,13 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronDown, Menu, X, Building2, UserCheck, GraduationCap, Sun, Moon } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronDown, Menu, X, Building2, UserCheck, GraduationCap, Sun, Moon, Sparkles, Shield } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [demoDropdownOpen, setDemoDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { demoLogin } = useAuth();
+  const navigate = useNavigate();
 
   const dropdownRef = useRef(null);
+  const demoDropdownRef = useRef(null);
 
   // Sticky header background blur effect on scroll
   useEffect(() => {
@@ -24,6 +29,9 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
+      if (demoDropdownRef.current && !demoDropdownRef.current.contains(event.target)) {
+        setDemoDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -34,6 +42,7 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setDropdownOpen(false);
+        setDemoDropdownOpen(false);
         setMobileOpen(false);
       }
     };
@@ -70,7 +79,24 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
   const handleNavClick = (sectionId) => {
     setMobileOpen(false);
     setDropdownOpen(false);
+    setDemoDropdownOpen(false);
     scrollToSection(sectionId);
+  };
+
+  const handleDemoAccess = async (role) => {
+    setDropdownOpen(false);
+    setDemoDropdownOpen(false);
+    setMobileOpen(false);
+    try {
+      const res = await demoLogin(role);
+      if (res.success) {
+        if (res.role === 'Admin') navigate('/admin/dashboard');
+        else if (res.role === 'Trainer') navigate('/trainer/dashboard');
+        else navigate('/trainee/dashboard');
+      }
+    } catch (e) {
+      navigate('/login');
+    }
   };
 
   return (
@@ -144,6 +170,61 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
+            {/* TRY DEMO DROPDOWN */}
+            <div className="lp-dropdown-container" ref={demoDropdownRef}>
+              <button
+                type="button"
+                className="lp-btn lp-btn-secondary"
+                onClick={() => {
+                  setDemoDropdownOpen(!demoDropdownOpen);
+                  setDropdownOpen(false);
+                }}
+                style={{ borderColor: 'var(--lp-cyan)', color: 'var(--lp-cyan)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Sparkles size={16} /> Try Demo <ChevronDown size={14} style={{ transform: demoDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+              </button>
+
+              {demoDropdownOpen && (
+                <div className="lp-dropdown-menu" role="menu" style={{ width: '220px' }}>
+                  <button 
+                    type="button"
+                    className="lp-dropdown-item"
+                    onClick={() => handleDemoAccess('Trainee')}
+                    style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <GraduationCap size={16} style={{ color: 'var(--lp-emerald)' }} />
+                      <span className="lp-dropdown-item-title">Trainee Demo</span>
+                    </div>
+                  </button>
+
+                  <button 
+                    type="button"
+                    className="lp-dropdown-item"
+                    onClick={() => handleDemoAccess('Trainer')}
+                    style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <UserCheck size={16} style={{ color: 'var(--lp-violet)' }} />
+                      <span className="lp-dropdown-item-title">Trainer Demo</span>
+                    </div>
+                  </button>
+
+                  <button 
+                    type="button"
+                    className="lp-dropdown-item"
+                    onClick={() => handleDemoAccess('Admin')}
+                    style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Shield size={16} style={{ color: 'var(--lp-cyan)' }} />
+                      <span className="lp-dropdown-item-title">Admin Demo</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Link to="/login" className="lp-btn lp-btn-secondary">
               Sign In
             </Link>
@@ -152,7 +233,10 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
               <button
                 type="button"
                 className="lp-btn lp-btn-primary"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
+                onClick={() => {
+                  setDropdownOpen(!dropdownOpen);
+                  setDemoDropdownOpen(false);
+                }}
                 aria-expanded={dropdownOpen}
                 aria-haspopup="true"
                 aria-controls="get-started-menu"
@@ -257,6 +341,21 @@ const LandingNavbar = ({ scrollToSection, theme, toggleTheme }) => {
             <button type="button" onClick={() => handleNavClick('organizations')} className="lp-mobile-nav-btn">For Organizations</button>
 
             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.85rem', paddingTop: '1.5rem' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--lp-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Instant Demo Access
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }}>
+                <button type="button" onClick={() => handleDemoAccess('Trainee')} className="lp-btn lp-btn-secondary" style={{ padding: '0.4rem 0.2rem', fontSize: '0.75rem', justifyContent: 'center' }}>
+                  Trainee
+                </button>
+                <button type="button" onClick={() => handleDemoAccess('Trainer')} className="lp-btn lp-btn-secondary" style={{ padding: '0.4rem 0.2rem', fontSize: '0.75rem', justifyContent: 'center' }}>
+                  Trainer
+                </button>
+                <button type="button" onClick={() => handleDemoAccess('Admin')} className="lp-btn lp-btn-secondary" style={{ padding: '0.4rem 0.2rem', fontSize: '0.75rem', justifyContent: 'center' }}>
+                  Admin
+                </button>
+              </div>
+
               <Link to="/login" onClick={() => setMobileOpen(false)} className="lp-btn lp-btn-secondary" style={{ width: '100%', minHeight: '44px' }}>
                 Sign In
               </Link>

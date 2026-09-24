@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, LogIn, UserCheck, Shield, GraduationCap, Building2 } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserCheck, Shield, GraduationCap, Building2, Sparkles } from 'lucide-react';
 import { AuthPageShell } from '../components/auth/AuthPageShell';
 import { FormSection } from '../components/auth/FormSection';
 import { AnimatedActionButton } from '../components/auth/AnimatedActionButton';
@@ -15,9 +15,36 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoSubmitting, setIsDemoSubmitting] = useState(false);
+  const [demoRole, setDemoRole] = useState(null);
 
-  const { login } = useAuth();
+  const { login, demoLogin } = useAuth();
   const navigate = useNavigate();
+
+  const handleDemoAccess = async (selectedRole) => {
+    setError('');
+    setIsDemoSubmitting(true);
+    setDemoRole(selectedRole);
+    try {
+      const result = await demoLogin(selectedRole);
+      if (result.success) {
+        if (result.role === 'Admin') {
+          navigate('/admin/dashboard');
+        } else if (result.role === 'Trainer') {
+          navigate('/trainer/dashboard');
+        } else {
+          navigate('/trainee/dashboard');
+        }
+      } else {
+        setError(result.message || 'Demo access failed.');
+      }
+    } catch (err) {
+      setError(err?.message || 'Demo access request failed.');
+    } finally {
+      setIsDemoSubmitting(false);
+      setDemoRole(null);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -190,6 +217,21 @@ const Login = () => {
             style={{ marginTop: '0.5rem', minHeight: '50px', fontSize: '1rem' }}
           >
             Sign In
+          </AnimatedActionButton>
+
+          {/* Secondary Demo Access Button for Active Portal Role */}
+          <AnimatedActionButton
+            type="button"
+            variant="outline"
+            fullWidth
+            isLoading={isDemoSubmitting}
+            loadingText={`Entering ${role} Demo...`}
+            disabled={isSubmitting || isDemoSubmitting}
+            onClick={() => handleDemoAccess(role)}
+            icon={Sparkles}
+            style={{ marginTop: '0.75rem', minHeight: '46px', fontSize: '0.95rem' }}
+          >
+            Try {role} Demo
           </AnimatedActionButton>
         </FormSection>
 

@@ -129,7 +129,11 @@ const HeroSection = ({ scrollToSection, theme, prefersReducedMotion }) => {
                 Explore Platform <ArrowRight size={18} />
               </button>
 
-              <Link to="/login" className="lp-btn lp-btn-secondary" style={{ padding: '0.85rem 1.5rem' }}>
+              <Link to="/login" className="lp-btn lp-btn-secondary" style={{ padding: '0.85rem 1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Sparkles size={16} style={{ color: 'var(--lp-cyan)' }} /> Try Demo
+              </Link>
+
+              <Link to="/login" className="lp-btn lp-btn-outline" style={{ padding: '0.85rem 1.5rem' }}>
                 Sign In
               </Link>
 

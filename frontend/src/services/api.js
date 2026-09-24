@@ -206,6 +206,36 @@ const getLocalData = (endpoint, method, body) => {
     }
 
     // Demo accounts kept so the portals can always be opened for a walkthrough.
+    if (endpoint.startsWith('/auth/demo-login') && method === 'POST') {
+      const role = body?.role || 'Trainee';
+      const demoUser = {
+        _id: `demo_${role.toLowerCase()}_1`,
+        name: role === 'Admin' ? 'Demo Administrator' : role === 'Trainer' ? 'Dr. Ananya Krishnan (Demo)' : 'Anita Trainee (Demo)',
+        email: `demo.${role.toLowerCase()}@moes.gov.in`,
+        role,
+        status: 'active',
+        isDemo: true,
+        token: `local-token-demo-${role.toLowerCase()}`,
+        organizationName: 'Ministry of Earth Sciences (Demo)',
+        organizationId: 'org_demo'
+      };
+      if (role === 'Admin') {
+        demoUser.traineeKey = 'CC-TRN-DEMO1';
+        demoUser.trainerKey = 'CC-TNR-DEMO1';
+        demoUser.traineeAccessKey = 'CC-TRN-DEMO1';
+        demoUser.trainerAccessKey = 'CC-TNR-DEMO1';
+      }
+      return {
+        status: 200,
+        ok: true,
+        data: {
+          success: true,
+          message: `Signed in as Demo ${role}`,
+          data: demoUser
+        }
+      };
+    }
+
     if (body?.email === 'trainer@capacityconnect.in' && body?.password === 'password123' && body?.role === 'Trainer') {
       return { status: 200, ok: true, data: { success: true, data: { _id: 't1', name: 'Trainer Name', email: body.email, role: 'Trainer', status: 'active', token: 'local-token-t1', organizationName: 'Demo Organization' } } };
     }

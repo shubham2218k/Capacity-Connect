@@ -50,6 +50,12 @@ const SystemSettings = () => {
         </p>
       </div>
 
+      {(user?.isDemo || user?.organizationName?.includes('Demo')) && (
+        <div style={{ backgroundColor: '#fffbe8', border: '1px solid #ffe58f', color: '#855900', padding: '0.85rem 1.25rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', lineHeight: 1.5 }}>
+          <strong>⚡ Demo Mode Notice:</strong> You are exploring the Demo Environment. Security setting updates, domain restrictions, and organization deletion are simulated and confined to sample demo data.
+        </div>
+      )}
+
       {savedSuccess && (
         <div style={{ backgroundColor: 'var(--success-bg)', color: '#065f46', padding: '0.85rem 1.25rem', borderRadius: '8px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
           <Check size={18} /> Organization settings updated successfully.

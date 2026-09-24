@@ -6,7 +6,8 @@ const {
   trainerResubmit,
   validateKey,
   login,
-  me
+  me,
+  demoLogin
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { uploadTrainerDocs } = require('../middleware/upload');
@@ -17,6 +18,7 @@ const router = express.Router();
 router.post('/admin-register', asyncHandler(adminRegister));
 router.post('/trainee-register', asyncHandler(traineeRegister));
 router.post('/register', asyncHandler(traineeRegister)); // alias kept for the existing frontend
+router.post('/demo-login', asyncHandler(demoLogin));
 
 // Trainer Apply & Resubmit with file upload support
 router.post(

@@ -8,7 +8,16 @@ const TrainerLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--text-light)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid var(--border-color)', borderTopColor: 'var(--secondary)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }} />
+          <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>Loading Trainer Portal...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Protect the routes: only allow Trainers
   if (!user || user.role !== 'Trainer') {
